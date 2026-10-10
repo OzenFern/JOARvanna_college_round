@@ -1,177 +1,149 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { RotateCcw, ShieldCheck, AlertTriangle, Tag, Layers } from "lucide-react";
+import React, { useState } from "react";
+import {
+  RotateCcw,
+  ShieldCheck,
+  AlertTriangle,
+  Tag,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ArrowRight,
+  Code,
+  FileText,
+} from "lucide-react";
 import { AttackResult, TraceStep } from "@/types";
 import { api } from "@/lib/api";
 
 interface TraceInspectorViewProps {
   findings: AttackResult[];
+  onReplaySuccess?: () => void;
 }
 
-const EVENT_STYLE: Record<string, React.CSSProperties> = {
-  invariant_violated:     { background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" },
-  tool_call_blocked:      { background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.20)" },
-  tool_execution_completed: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" },
-};
-
-const DEFAULT_EVENT_STYLE: React.CSSProperties = {
-  background: "rgba(255,255,255,0.02)",
-  border: "1px solid rgba(255,255,255,0.06)",
-};
-
 export default function TraceInspectorView({ findings }: TraceInspectorViewProps) {
-  const [selected,      setSelected]      = useState<AttackResult | null>(findings[0] ?? null);
-  const [steps,         setSteps]         = useState<TraceStep[]>([]);
-  const [loadingTrace,  setLoadingTrace]  = useState(false);
-  const [replayLoading, setReplayLoading] = useState(false);
-  const [replayResult,  setReplayResult]  = useState<any>(null);
-  const [replayError,   setReplayError]   = useState<string | null>(null);
-  const [traceError,    setTraceError]    = useState<string | null>(null);
+  const [selectedAttack, setSelectedAttack] = useState<AttackResult | null>(
+    findings.length > 0 ? findings[0] : null
+  );
+  const [selectedTraceSteps, setSelectedTraceSteps] = useState<TraceStep[]>([]);
+  const [loadingTrace, setLoadingTrace] = useState<boolean>(false);
+  const [replayLoading, setReplayLoading] = useState<boolean>(false);
+  const [replayResult, setReplayResult] = useState<{
+    status: string;
+    original_trace_id: string;
+    replay_trace_id: string;
+    target_defense: string;
+    model_calls_made: number;
+    total_steps: number;
+    verdict: {
+      success: boolean;
+      violated_invariants: string[];
+      severity: string | null;
+    };
+  } | null>(null);
 
-  const handleSelect = async (atk: AttackResult) => {
-    setSelected(atk);
+  // Fetch full trace when selecting an attack
+  const handleSelectAttack = async (atk: AttackResult) => {
+    setSelectedAttack(atk);
     setReplayResult(null);
-    setReplayError(null);
-    setTraceError(null);
-    if (atk.trace_ids?.length) {
+    if (atk.trace_ids && atk.trace_ids.length > 0) {
       setLoadingTrace(true);
       try {
-        const data = await api.getTrace(atk.trace_ids[0]);
-        setSteps((data as any).steps || []);
-      } catch (err: any) {
-        setSteps([]);
-        setTraceError(err.message || "Unable to load this trace.");
+        const traceData = await api.getTrace(atk.trace_ids[0]);
+        setSelectedTraceSteps((traceData as any).steps || []);
+      } catch (err) {
+        setSelectedTraceSteps([]);
       } finally {
         setLoadingTrace(false);
       }
     } else {
-      setSteps([]);
+      setSelectedTraceSteps([]);
     }
   };
 
-  useEffect(() => {
-    if (findings[0]) void handleSelect(findings[0]);
-  }, [findings]);
-
-  const handleReplay = async () => {
-    const traceId = selected?.trace_ids?.[0];
+  const handleRunReplay = async (targetDefense: string = "D1+D2+D3") => {
+    const traceId = selectedAttack?.trace_ids?.[0];
     if (!traceId) return;
     setReplayLoading(true);
-    setReplayError(null);
     try {
       const res = await api.replayTrace(traceId);
-      setReplayResult(res);
+      setReplayResult(res as any);
     } catch (err: any) {
-      setReplayError(err.message || "Replay failed.");
+      alert(`Replay failed: ${err.message}`);
     } finally {
       setReplayLoading(false);
     }
   };
 
   return (
-    <div className="space-y-5 fade-in">
-
-      {/* ── Header Banner ── */}
-      <div className="rounded-2xl p-6" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
-                Causal Trace Inspector &amp; Exact Replay
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider"
-                style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)", border: "1px solid var(--border-default)" }}>
-                Zero Model Calls
-              </span>
-            </div>
-            <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Every agent execution produces a causal trace linking inputs, tainted context, proposed
-              tool actions, policy decisions, and invariant violations. Replay any exploit trace against
-              hardened defenses with <strong className="text-white">zero model calls</strong>.
-            </p>
-          </div>
-
-          {selected && (
-            <button
-              onClick={handleReplay}
-              disabled={replayLoading || !selected.trace_ids?.length}
-              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-sans font-medium text-white transition disabled:opacity-45"
-              style={{ background: "#059669", boxShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
-              onMouseEnter={e => !replayLoading && (e.currentTarget.style.background = "#10B981")}
-              onMouseLeave={e => !replayLoading && (e.currentTarget.style.background = "#059669")}
-            >
-              {replayLoading
-                ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <RotateCcw className="w-4 h-4" />
-              }
-              <span>Replay vs Hardened (D1+D2+D3)</span>
-            </button>
-          )}
+    <div className="space-y-6">
+      
+      {/* ── Heading ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="label mb-1 text-[#ee7b30]">Causal Trace Graph</div>
+          <h1 className="h1">Trace run &amp; test exact replay</h1>
+          <p className="muted text-xs mt-1 max-w-xl">
+            Inspect the step where the model proposed an unauthorized side effect, then test if hardened software policy halts it with <strong>zero model calls</strong>.
+          </p>
         </div>
+
+        {selectedAttack && (
+          <button
+            onClick={() => handleRunReplay("D1+D2+D3")}
+            disabled={replayLoading || !selectedAttack.trace_ids?.length}
+            className="btn btn-sm btn-primary self-start sm:self-auto"
+          >
+            {replayLoading ? (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <RotateCcw className="w-3 h-3" />
+            )}
+            <span>Replay against Hardened (D1+D2+D3)</span>
+          </button>
+        )}
       </div>
 
-      {/* ── Two Column Inspector ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-
-        {/* ── Left: Attack List ── */}
+      {/* ── Main Two-Column Layout ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column: Attack Traces List */}
         <div className="lg:col-span-4 space-y-2">
-          <div className="flex items-center justify-between px-1 mb-3">
-            <span className="text-xs font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Captured Attack Traces
-            </span>
-            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-              {findings.length} findings
-            </span>
+          <div className="flex items-center justify-between px-1 mb-1">
+            <span className="label">Recorded Traces</span>
+            <span className="font-mono text-[11px] text-[#8a8c97]">{findings.length} findings</span>
           </div>
 
-          <div className="space-y-2 max-h-[700px] overflow-y-auto pr-1">
-            {findings.length === 0 && (
-              <div className="p-4 rounded-xl text-center text-sm font-mono" style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-                No findings yet. Run a campaign first.
-              </div>
-            )}
-            {findings.map(item => {
-              const isActive  = selected?.attack_id === item.attack_id;
+          <div className="space-y-1.5 max-h-[640px] overflow-y-auto pr-1">
+            {findings.map((item) => {
+              const isSelected = selectedAttack?.attack_id === item.attack_id;
               const isExploit = item.successes > 0;
               return (
                 <div
                   key={item.attack_id}
-                  onClick={() => handleSelect(item)}
-                  className="p-3.5 rounded-xl cursor-pointer transition"
-                  style={{
-                    background: isActive ? "var(--bg-muted)" : "var(--bg-elevated)",
-                    border: isActive ? "1px solid rgba(239,68,68,0.40)" : "1px solid var(--border-subtle)",
-                    boxShadow: isActive ? "0 0 0 1px rgba(239,68,68,0.10)" : "none",
-                  }}
-                  onMouseEnter={e => !isActive && (e.currentTarget.style.borderColor = "var(--border-default)")}
-                  onMouseLeave={e => !isActive && (e.currentTarget.style.borderColor = "var(--border-subtle)")}
+                  onClick={() => handleSelectAttack(item)}
+                  className={`p-3 rounded-xl border cursor-pointer transition text-left ${
+                    isSelected
+                      ? "bg-white border-[#ee7b30] shadow-sm"
+                      : "bg-[#fbfbfa] border-[#e9e8e4] hover:bg-white hover:border-[#d9d8d3]"
+                  }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                        {item.attack_id}
-                      </span>
-                      <span className="font-mono text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
-                        style={isExploit
-                          ? { background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }
-                          : { background: "rgba(16,185,129,0.10)", color: "#6EE7B7", border: "1px solid rgba(16,185,129,0.20)" }
-                        }>
-                        {isExploit ? "Exploited" : "Defended"}
-                      </span>
-                    </div>
-                    <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-                      {item.violated_invariants?.[0] || "None"}
+                    <span className="font-mono text-xs font-semibold text-[#1c1e2b]">
+                      {item.attack_id}
+                    </span>
+                    <span className={`badge ${isExploit ? "badge-fail" : "badge-pass"}`}>
+                      {isExploit ? "Exploited" : "Defended"}
                     </span>
                   </div>
-                  <p className="text-sm line-clamp-1 mb-2" style={{ color: "var(--text-secondary)" }}>{item.name}</p>
-                  <div className="flex items-center justify-between text-xs font-mono pt-2"
-                    style={{ borderTop: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}>
-                    <span>Severity: <span className={
-                      item.severity === "CRITICAL" ? "text-red-400" :
-                      item.severity === "HIGH" ? "text-amber-400" : ""
-                    }>{item.severity}</span></span>
-                    <span>Surface: {item.surface}</span>
+
+                  <p className="text-xs text-[#5a5d6b] line-clamp-1">
+                    {item.name}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#f0f0ed] text-[11px] font-mono text-[#8a8c97]">
+                    <span>Severity: <strong className={item.severity === "CRITICAL" ? "text-[#b83a32]" : "text-[#1c1e2b]"}>{item.severity}</strong></span>
+                    <span>{item.surface}</span>
                   </div>
                 </div>
               );
@@ -179,184 +151,186 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
           </div>
         </div>
 
-        {/* ── Right: Step Timeline ── */}
-        <div className="lg:col-span-8">
-          {selected ? (
-            <div className="rounded-2xl p-5 space-y-5" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
-
-              {/* Finding Summary */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4"
-                style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+        {/* Right Column: Step Timeline & Exact Replay Panel */}
+        <div className="lg:col-span-8 space-y-4">
+          {selectedAttack ? (
+            <div className="card card-pad bg-white space-y-5">
+              
+              {/* Attack Overview Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#e9e8e4]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>{selected.name}</h2>
-                    <span className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>({selected.attack_id})</span>
+                    <h2 className="text-base font-semibold text-[#1c1e2b]">{selectedAttack.name}</h2>
+                    <span className="font-mono text-xs text-[#8a8c97]">({selectedAttack.attack_id})</span>
                   </div>
-                  <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-                    {selected.what_leaked_or_abused || "Simulated multi-turn autonomous interaction sequence."}
+                  <p className="text-xs text-[#5a5d6b] mt-1">
+                    {selectedAttack.what_leaked_or_abused || "Simulated multi-turn autonomous interaction sequence."}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-xs font-mono mb-0.5" style={{ color: "var(--text-muted)" }}>Trace ID</div>
-                  <div className="text-sm font-mono" style={{ color: "var(--text-secondary)" }}>
-                    {selected.trace_ids?.[0]?.slice(0, 16) ?? "Pending"}...
+                <div className="text-left sm:text-right">
+                  <div className="label text-[10px]">Trace ID</div>
+                  <div className="font-mono text-xs text-[#1c1e2b]">
+                    {selectedAttack.trace_ids?.[0]?.slice(0, 14) || "Pending"}...
                   </div>
                 </div>
               </div>
 
-              {/* Replay Error */}
-              {replayError && (
-                <div className="rounded-xl px-4 py-3 text-sm font-mono flex items-center gap-2"
-                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5" }}>
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  {replayError}
-                </div>
-              )}
-
-              {/* Replay Result */}
+              {/* Exact Replay Verification Box (Clean Light Banner) */}
               {replayResult && (
-                <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                <div className="rounded-xl border border-[#2e6a4f]/30 bg-[#e9f3ed] p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-emerald-400 text-sm font-mono font-semibold">
+                    <div className="flex items-center gap-2 text-[#2e6a4f] text-xs font-semibold">
                       <ShieldCheck className="w-4 h-4" />
-                      EXACT REPLAY VERIFICATION — Zero Model Calls
+                      <span>EXACT REPLAY VERIFICATION: {replayResult.model_calls_made} Model Calls Used</span>
                     </div>
-                    <span className="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded"
-                      style={replayResult.exploit_prevented
-                        ? { background: "rgba(16,185,129,0.12)", color: "#6EE7B7", border: "1px solid rgba(16,185,129,0.25)" }
-                        : { background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }
-                      }>
-                      {replayResult.exploit_prevented ? "Attack Neutralized" : "Vulnerable"}
+                    <span className={`badge ${replayResult.verdict.success ? "badge-fail" : "badge-pass"}`}>
+                      {replayResult.verdict.success ? "Still Vulnerable" : "Attack Neutralized"}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm font-mono">
-                    {[
-                      { label: "Baseline Actions", value: `${replayResult.original_action_count} proposed`, color: "var(--text-primary)" },
-                      { label: "Actions Blocked", value: `${replayResult.blocked_count} halted`, color: "#FCA5A5" },
-                      { label: "Gate Status",      value: "D1+D2+D3",                              color: "#6EE7B7" },
-                    ].map(({ label, value, color }) => (
-                      <div key={label} className="p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
-                        <div className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>{label}</div>
-                        <div className="font-bold" style={{ color }}>{value}</div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                    <div className="bg-white p-2 rounded-lg border border-[#d9d8d3]">
+                      <div className="text-[#8a8c97] text-[10px]">Total Steps</div>
+                      <div className="font-semibold text-[#1c1e2b] mt-0.5">{replayResult.total_steps} executed</div>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-[#d9d8d3]">
+                      <div className="text-[#8a8c97] text-[10px]">Invariants Violated</div>
+                      <div className={`font-semibold mt-0.5 ${replayResult.verdict.violated_invariants.length > 0 ? "text-[#b83a32]" : "text-[#2e6a4f]"}`}>
+                        {replayResult.verdict.violated_invariants.length > 0
+                          ? replayResult.verdict.violated_invariants.join(", ")
+                          : "None (Blocked)"}
                       </div>
-                    ))}
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-[#d9d8d3]">
+                      <div className="text-[#8a8c97] text-[10px]">Policy Gate Status</div>
+                      <div className="text-[#2e6a4f] font-semibold mt-0.5">{replayResult.target_defense} Enforced</div>
+                    </div>
                   </div>
-                  <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                    Tool invocations that succeeded in baseline were deterministically re-evaluated
-                    against the hardened policy engine. All unauthorized actions were intercepted before execution.
+
+                  <p className="text-[11px] text-[#2e6a4f]/90 leading-relaxed">
+                    Cached tool proposals were re-evaluated through the ToolGateway. Deterministic software invariants intercepted the payload without re-prompting the LLM.
                   </p>
                 </div>
               )}
 
               {/* Step Timeline */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Execution Timeline</span>
-                  <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{steps.length} events</span>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="label">Execution Timeline</span>
+                  <span className="font-mono text-[11px] text-[#8a8c97]">{selectedTraceSteps.length} events</span>
                 </div>
 
-                {traceError ? (
-                  <div className="py-6 text-center text-sm font-mono rounded-xl text-red-300"
-                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
-                    {traceError}
+                {loadingTrace ? (
+                  <div className="py-8 text-center text-xs font-mono text-[#8a8c97]">
+                    Loading trace steps...
                   </div>
-                ) : loadingTrace ? (
+                ) : selectedTraceSteps.length > 0 ? (
                   <div className="space-y-2">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="skeleton h-16 rounded-xl" />
-                    ))}
-                  </div>
-                ) : steps.length > 0 ? (
-                  <div className="space-y-2">
-                    {steps.map((step, idx) => (
-                      <div key={idx} className="rounded-xl p-4 space-y-2 text-sm"
-                        style={EVENT_STYLE[step.event_type] ?? DEFAULT_EVENT_STYLE}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs px-1.5 py-0.5 rounded"
-                              style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
-                              #{step.step_number}
-                            </span>
-                            <span className="font-mono font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-                              {step.event_type}
-                            </span>
-                            {step.tainted && (
-                              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
-                                style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }}>
-                                <Tag className="w-3 h-3" /> TAINTED
+                    {selectedTraceSteps.map((step, idx) => {
+                      const isViolation = step.event_type === "invariant_violated";
+                      const isBlocked = step.event_type === "tool_call_blocked";
+                      const isExecution = step.event_type === "tool_execution_completed";
+                      const isProposed = step.event_type === "tool_call_proposed";
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-xl border p-3 text-xs space-y-1.5 transition ${
+                            isViolation
+                              ? "bg-[#fbecea] border-[#b83a32]/30"
+                              : isBlocked
+                              ? "bg-[#fbf3e3] border-[#946013]/30"
+                              : isExecution
+                              ? "bg-white border-[#e9e8e4]"
+                              : "bg-[#fbfbfa] border-[#e9e8e4]"
+                          }`}
+                        >
+                          {/* Step header */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[#efefec] text-[#5a5d6b]">
+                                #{step.step_number}
                               </span>
-                            )}
+                              <span className="font-medium text-[#1c1e2b]">
+                                {step.event_type}
+                              </span>
+                              {step.tainted && (
+                                <span className="badge badge-fail text-[10px] py-0 px-1.5">
+                                  TAINTED
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-mono text-[11px] text-[#8a8c97]">
+                              {step.actor}
+                            </span>
                           </div>
-                          <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Actor: {step.actor}</span>
+
+                          {/* Tool Name */}
+                          {step.tool_name && (
+                            <div className="flex items-center gap-1.5 font-mono text-xs">
+                              <span className="text-[#8a8c97]">Tool:</span>
+                              <span className="font-semibold text-[#ee7b30]">{step.tool_name}</span>
+                            </div>
+                          )}
+
+                          {/* Arguments */}
+                          {step.arguments && Object.keys(step.arguments).length > 0 && (
+                            <div className="bg-[#f6f6f4] rounded-lg p-2 font-mono text-[11px] text-[#1c1e2b] border border-[#e9e8e4] overflow-x-auto">
+                              <pre>{JSON.stringify(step.arguments, null, 2)}</pre>
+                            </div>
+                          )}
+
+                          {/* Policy Decision */}
+                          {step.policy_decision && (
+                            <div className="flex items-center gap-2 font-mono text-[11px]">
+                              <span className="text-[#8a8c97]">Policy:</span>
+                              <span className={`font-semibold ${
+                                step.policy_decision === "DENY" ? "text-[#b83a32]" : "text-[#2e6a4f]"
+                              }`}>
+                                {step.policy_decision}
+                              </span>
+                              {step.reason_code && (
+                                <span className="text-[#8a8c97]">({step.reason_code})</span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Result */}
+                          {step.tool_result && (
+                            <div className="bg-[#f6f6f4] rounded-lg p-2 font-mono text-[11px] text-[#5a5d6b] border border-[#e9e8e4]">
+                              <span className="text-[#8a8c97] block mb-0.5">Result:</span>
+                              <pre>{JSON.stringify(step.tool_result, null, 2)}</pre>
+                            </div>
+                          )}
+
+                          {/* Input */}
+                          {step.input && (
+                            <div className="text-xs text-[#5a5d6b] bg-[#f6f6f4] p-2 rounded-lg border border-[#e9e8e4]">
+                              <span className="text-[#8a8c97] block font-mono text-[10px] mb-0.5">Prompt:</span>
+                              {step.input}
+                            </div>
+                          )}
                         </div>
-
-                        {step.tool_name && (
-                          <div className="flex items-center gap-2 font-mono text-sm">
-                            <span style={{ color: "var(--text-muted)" }}>Tool:</span>
-                            <span className="text-blue-400 font-semibold">{step.tool_name}</span>
-                          </div>
-                        )}
-
-                        {step.arguments && Object.keys(step.arguments).length > 0 && (
-                          <div className="rounded-lg p-3 overflow-x-auto font-mono text-xs"
-                            style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--border-subtle)" }}>
-                            <span className="block mb-1" style={{ color: "var(--text-muted)" }}>Arguments:</span>
-                            <pre style={{ color: "var(--text-secondary)", margin: 0 }}>{JSON.stringify(step.arguments, null, 2)}</pre>
-                          </div>
-                        )}
-
-                        {step.policy_decision && (
-                          <div className="flex items-center gap-2 font-mono text-xs">
-                            <span style={{ color: "var(--text-muted)" }}>Policy Decision:</span>
-                            <span className={
-                              step.policy_decision === "DENY"  ? "text-red-400 font-semibold" :
-                              step.policy_decision === "ALLOW" ? "text-emerald-400 font-semibold" : "text-amber-400"
-                            }>{step.policy_decision}</span>
-                            {step.reason_code && (
-                              <span style={{ color: "var(--text-muted)" }}>({step.reason_code})</span>
-                            )}
-                          </div>
-                        )}
-
-                        {step.tool_result && (
-                          <div className="rounded-lg p-2.5 font-mono text-xs"
-                            style={{ background: "rgba(0,0,0,0.2)", border: "1px solid var(--border-subtle)" }}>
-                            <span className="block mb-0.5" style={{ color: "var(--text-muted)" }}>Tool Result:</span>
-                            <pre style={{ color: "var(--text-secondary)", margin: 0 }}>{JSON.stringify(step.tool_result, null, 2)}</pre>
-                          </div>
-                        )}
-
-                        {step.model_output && (
-                          <div className="rounded-lg p-2.5 text-sm" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--border-subtle)" }}>
-                            <span className="block text-xs font-mono mb-1" style={{ color: "var(--text-muted)" }}>Model Output:</span>
-                            <span style={{ color: "var(--text-secondary)" }}>{step.model_output}</span>
-                          </div>
-                        )}
-
-                        {step.input && (
-                          <div className="rounded-lg p-2.5 text-sm" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--border-subtle)" }}>
-                            <span className="block text-xs font-mono mb-1" style={{ color: "var(--text-muted)" }}>Input Received:</span>
-                            <span style={{ color: "var(--text-secondary)" }}>{step.input}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="py-10 text-center text-sm font-mono rounded-xl" style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-                    Click an attack on the left to inspect its causal trace.
+                  <div className="p-8 text-center text-xs font-mono text-[#8a8c97] border border-[#e9e8e4] rounded-xl bg-[#fbfbfa]">
+                    Select an attack trace on the left to inspect its causal steps.
                   </div>
                 )}
               </div>
+
             </div>
           ) : (
-            <div className="rounded-2xl py-16 text-center text-sm font-mono"
-              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}>
+            <div className="card card-pad bg-white text-center py-12 text-xs font-mono text-[#8a8c97]">
               No attack traces captured yet. Run a campaign to inspect execution graphs.
             </div>
           )}
         </div>
+
       </div>
+
     </div>
   );
 }
