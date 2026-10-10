@@ -23,13 +23,17 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
   const [loadingTrace, setLoadingTrace] = useState<boolean>(false);
   const [replayLoading, setReplayLoading] = useState<boolean>(false);
   const [replayResult, setReplayResult] = useState<{
-    original_defense: string;
+    status: string;
+    original_trace_id: string;
+    replay_trace_id: string;
     target_defense: string;
-    original_action_count: number;
-    replayed_action_count: number;
-    blocked_count: number;
-    exploit_prevented: boolean;
-    replayed_steps: TraceStep[];
+    model_calls_made: number;
+    total_steps: number;
+    verdict: {
+      success: boolean;
+      violated_invariants: string[];
+      severity: string | null;
+    };
   } | null>(null);
 
   // Fetch full trace when selecting an attack
@@ -188,28 +192,36 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-semibold">
                       <ShieldCheck className="w-4 h-4" />
-                      <span>EXACT REPLAY VERIFICATION: Zero Model Calls Used</span>
+                      <span>EXACT REPLAY VERIFICATION: {replayResult.model_calls_made} Model Calls Used</span>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
-                      {replayResult.exploit_prevented ? "Attack Neutralized" : "Vulnerable"}
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase border ${
+                      replayResult.verdict.success
+                        ? "bg-red-900/60 text-red-300 border-red-700/50"
+                        : "bg-emerald-900/60 text-emerald-300 border-emerald-700/50"
+                    }`}>
+                      {replayResult.verdict.success ? "Still Vulnerable" : "Attack Neutralized"}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-xs font-mono">
                     <div className="bg-[#0E111A] p-2.5 rounded border border-zinc-800">
-                      <div className="text-zinc-500 text-[10px]">Baseline Actions</div>
-                      <div className="text-zinc-200 font-bold mt-0.5">{replayResult.original_action_count} proposed</div>
+                      <div className="text-zinc-500 text-[10px]">Replay Steps</div>
+                      <div className="text-zinc-200 font-bold mt-0.5">{replayResult.total_steps} total</div>
                     </div>
                     <div className="bg-[#0E111A] p-2.5 rounded border border-zinc-800">
-                      <div className="text-zinc-500 text-[10px]">Replay Actions Blocked</div>
-                      <div className="text-red-400 font-bold mt-0.5">{replayResult.blocked_count} halted by gate</div>
+                      <div className="text-zinc-500 text-[10px]">Invariants Violated</div>
+                      <div className={`font-bold mt-0.5 ${replayResult.verdict.violated_invariants.length > 0 ? "text-red-400" : "text-emerald-400"}`}>
+                        {replayResult.verdict.violated_invariants.length > 0
+                          ? replayResult.verdict.violated_invariants.join(", ")
+                          : "None"}
+                      </div>
                     </div>
                     <div className="bg-[#0E111A] p-2.5 rounded border border-zinc-800">
                       <div className="text-zinc-500 text-[10px]">Policy Gate Status</div>
-                      <div className="text-emerald-400 font-bold mt-0.5">D1+D2+D3 Enforced</div>
+                      <div className="text-emerald-400 font-bold mt-0.5">{replayResult.target_defense} Enforced</div>
                     </div>
                   </div>
                   <p className="text-[11px] text-zinc-400">
-                    The tool invocations that succeeded in baseline were deterministically re-evaluated against the hardened policy engine. All unauthorized actions were intercepted and blocked before execution.
+                    The tool invocations that succeeded in baseline were deterministically re-evaluated against the hardened policy engine. Zero new model calls were made.
                   </p>
                 </div>
               )}

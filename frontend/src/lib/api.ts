@@ -8,13 +8,13 @@ export function setApiKey(key: string) {
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options?.headers || {}),
+    ...((options?.headers as Record<string, string>) || {}),
   };
 
   if (apiKey) {
-    headers["X-API-Key"] = apiKey;
+    headers["X-Gemini-Key"] = apiKey;
   }
 
   const response = await fetch(url, {

@@ -111,7 +111,9 @@ class CampaignRunner:
                     trial_trace_ids.append(tracer.trace_id)
                     all_violated_invariants.extend(verdict.violated_invariants)
                     if verdict.severity:
-                        highest_severity = verdict.severity
+                        _RANK = {Severity.LOW: 0, Severity.MEDIUM: 1, Severity.HIGH: 2, Severity.CRITICAL: 3}
+                        if _RANK.get(verdict.severity, 0) > _RANK.get(highest_severity, 0):
+                            highest_severity = verdict.severity
                     break
                 else:
                     # Attempt failed; try mutation if budget allows

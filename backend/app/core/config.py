@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     
     # Model defaults
     DEFAULT_MODEL_ADAPTER: str = "mock"
-    GEMINI_MODEL_NAME: str = "gemini-2.0-flash"
+    GEMINI_MODEL_NAME: str = "gemini-2.5-flash"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
