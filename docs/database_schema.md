@@ -15,14 +15,10 @@ DATABASE_URL=postgresql://user:password@localhost:5432/agentbreak_db
 ```
 
 ### Option B: Manual Execution via `psql` / CLI
-Run either the root or backend schema file directly against your PostgreSQL instance:
+Run the root schema file directly against your PostgreSQL instance:
 
 ```bash
-# Local or remote PostgreSQL instance
 psql "$DATABASE_URL" -f schema.sql
-
-# Or from the backend directory:
-psql "$DATABASE_URL" -f backend/schema.sql
 ```
 
 ### Option C: Cloud Providers (Supabase, Neon, Render, AWS RDS)

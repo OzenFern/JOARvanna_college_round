@@ -30,8 +30,7 @@ JOARvanna_college_round/
 │   │   ├── security/              # Deterministic PolicyEngine (D1, D2, D3) & Gateway
 │   │   └── tools/                 # Sandboxed mock tools & planted canary database
 │   ├── data/                      # documents/, traces/, evaluations/, blocklist.txt
-│   ├── tests/                     # 27 comprehensive pytest tests (100% passing)
-│   ├── schema.sql                 # PostgreSQL DDL schema & indexes
+│   ├── tests/                     # 28 comprehensive pytest tests (100% passing)
 │   └── pyproject.toml             # uv / hatchling dependency manifest
 ├── frontend/                       # Next.js 14 (App Router, Tailwind CSS, Lucide React)
 │   ├── src/
@@ -71,6 +70,7 @@ AgentBreak persists execution traces, campaign runs, and evaluation matrices in 
 ### 1. Start the Backend (FastAPI on Port 8000)
 ```bash
 cd backend
+uv sync --extra dev
 uv run uvicorn app.main:app --reload --port 8000
 ```
 - API Health Check: `http://localhost:8000/health`
@@ -90,7 +90,7 @@ Open your browser and navigate to: **`http://localhost:3000`**
 cd backend
 uv run pytest
 ```
-*All 27 integration tests across the red team engine, policy rules, and replay system pass in ~3.5 seconds.*
+*All 28 integration tests across the red team engine, policy rules, and replay system pass in ~3.2 seconds.*
 
 ---
 
