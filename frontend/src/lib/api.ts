@@ -47,12 +47,30 @@ export const api = {
   },
 
   async getLatestEvaluation() {
-    return request<any[]>("/evaluations");
+    return request<any[]>("/evaluations/latest");
   },
 
   async runEvaluation() {
-    return request<{ summaries: any[] }>("/evaluations", {
+    return request<{ summaries: any[] }>("/evaluations/run", {
       method: "POST",
+    });
+  },
+
+  async startCampaign(payload: any) {
+    return request<any>("/campaigns", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getTrace(traceId: string) {
+    return request<any>(`/traces/${traceId}`);
+  },
+
+  async replayTrace(traceId: string, targetDefense?: string) {
+    return request<any>(`/traces/${traceId}/replay`, {
+      method: "POST",
+      body: JSON.stringify(targetDefense ? { target_defense: targetDefense } : {}),
     });
   },
 };
