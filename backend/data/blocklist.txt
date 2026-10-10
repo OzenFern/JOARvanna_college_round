@@ -1,0 +1,4 @@
+evil.com
+malicious-exfil.org
+attacker-c2.net
+bad-actor.xyz
