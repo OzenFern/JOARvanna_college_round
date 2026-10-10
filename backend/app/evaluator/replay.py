@@ -5,6 +5,8 @@ from app.core.contracts import Actor, EventType, TraceStep
 from app.evaluator.judge import Judge, JudgeVerdict
 from app.evaluator.tracer import TraceRecorder
 from app.security.gateway import ToolGateway
+from app.agent.target_agent import DEFAULT_TOOLS
+from app.tools.registry import reset_mock_state
 
 class ExactReplayEngine:
     @staticmethod
@@ -20,6 +22,7 @@ class ExactReplayEngine:
         original_trace = TraceRecorder.load(original_trace_id)
         if not original_trace:
             raise ValueError(f"Trace '{original_trace_id}' not found on disk.")
+        reset_mock_state()
 
         defense_to_use = target_defense or original_trace.get("active_defense", "D0")
         replay_tracer = TraceRecorder(
@@ -71,6 +74,7 @@ class ExactReplayEngine:
                     arguments=arguments,
                     tracer=replay_tracer,
                     is_tainted=is_tainted,
+                    declared_tools=original_trace.get("declared_tools", DEFAULT_TOOLS),
                 )
 
         replay_tracer.record_step(
@@ -81,7 +85,7 @@ class ExactReplayEngine:
         replay_trace_path = replay_tracer.save()
 
         # Score the replayed trace
-        judge = Judge()
+        judge = Judge(declared_tools=original_trace.get("declared_tools", DEFAULT_TOOLS))
         verdict: JudgeVerdict = judge.evaluate_trace(replay_tracer.steps)
 
         return {

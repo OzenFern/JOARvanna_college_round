@@ -234,4 +234,5 @@ yarn-error.log*
 
 # Local data files (trace logs, etc.) — kept out of version control
 backend/data/traces/*.json
+!backend/data/traces/seed-trace.json
 backend/data/evaluations/*.json

@@ -9,6 +9,7 @@ import { EvaluationSummary } from "@/types";
 
 interface DashboardViewProps {
   evaluations: EvaluationSummary[];
+  policy: { tool_allowlist?: string[]; registered_tools?: string[] } | null;
   onNavigate: (tab: "runner" | "traces" | "compare" | "audit") => void;
   onRunQuickEvaluation: () => void;
   loading: boolean;
@@ -45,13 +46,14 @@ const MetricCard = ({
   </div>
 );
 
-export default function DashboardView({ evaluations, onNavigate, onRunQuickEvaluation, loading }: DashboardViewProps) {
+export default function DashboardView({ evaluations, policy, onNavigate, onRunQuickEvaluation, loading }: DashboardViewProps) {
   const d0       = evaluations.find(e => e.active_defense === "D0");
   const fullStack = evaluations.find(e => e.active_defense === "D1+D2+D3");
 
-  const baselineASR  = d0        ? (d0.attack_success_rate  * 100).toFixed(1) : "100.0";
-  const defendedASR  = fullStack ? (fullStack.attack_success_rate * 100).toFixed(1) : "0.0";
-  const benignPass   = fullStack ? (fullStack.benign_pass_rate    * 100).toFixed(1) : "100.0";
+  const baselineASR  = d0        ? (d0.attack_success_rate  * 100).toFixed(1) : "—";
+  const defendedASR  = fullStack ? (fullStack.attack_success_rate * 100).toFixed(1) : "—";
+  const benignPass   = fullStack ? (fullStack.benign_pass_rate    * 100).toFixed(1) : "—";
+  const toolCount = policy?.tool_allowlist?.length;
 
   return (
     <div className="space-y-5 fade-in">
@@ -70,9 +72,9 @@ export default function DashboardView({ evaluations, onNavigate, onRunQuickEvalu
               </span>
             </div>
             <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Target Customer-Support AI Agent operates in a controlled sandbox with 7 mock tools.
+              Target Customer-Support AI Agent operates in a controlled sandbox with {toolCount ?? "—"} configured tools.
               In unhardened baseline (D0), security rules exist only in prompt text.
-              Active defense layers (D1 Tool Gatekeeper, D2 Canary Filter, D3 Content Sanitizer)
+              Active defense layers (D1 Tool Gatekeeper, D2 Canary Filter, D3 Taint Tracking)
               enforce policies in application code.
             </p>
           </div>
@@ -112,14 +114,14 @@ export default function DashboardView({ evaluations, onNavigate, onRunQuickEvalu
           <MetricCard
             label="Benign Task Pass Rate"
             value={`${benignPass}%`}
-            sub="10/10 legitimate tasks pass"
+            sub={fullStack ? `${Math.round(fullStack.benign_pass_rate * 100)}% of evaluated tasks pass` : "No evaluation loaded"}
             accent="text-blue-400"
             icon={Zap}
           />
           <MetricCard
             label="Over-Permissioned Tools"
-            value="2 Tools"
-            sub="http_request &amp; execute_shell"
+            value={`${policy ? (policy.registered_tools?.length ?? 0) - (policy.tool_allowlist?.length ?? 0) : "—"} Tools`}
+            sub="Outside the configured allowlist"
             accent="text-amber-400"
             icon={ShieldAlert}
             onClick={() => onNavigate("audit")}
@@ -142,7 +144,7 @@ export default function DashboardView({ evaluations, onNavigate, onRunQuickEvalu
             invariants, it is halted before the side effect executes.
           </p>
           <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Side-Effect Isolation: ACTIVE</span>
+            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Policy boundary: {fullStack ? "MEASURED" : "NOT RUN"}</span>
             <button onClick={() => onNavigate("compare")}
               className="flex items-center gap-1 text-sm font-sans text-red-400 hover:text-red-300 transition">
               View Defense Matrix <ArrowUpRight className="w-3.5 h-3.5" />
@@ -162,7 +164,7 @@ export default function DashboardView({ evaluations, onNavigate, onRunQuickEvalu
             mutators (Rephrase, Reframe, Split, Relocate, Encode) when initial attempts are deflected.
           </p>
           <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Autonomous Mutator Engine: READY</span>
+            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Rule-based Mutators: 5 strategies</span>
             <button onClick={() => onNavigate("runner")}
               className="flex items-center gap-1 text-sm font-sans text-blue-400 hover:text-blue-300 transition">
               Launch Campaign <ArrowUpRight className="w-3.5 h-3.5" />

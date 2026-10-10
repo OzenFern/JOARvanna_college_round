@@ -147,6 +147,21 @@ class ToolGateway:
         tool_fn = TOOL_REGISTRY[tool_name]
         try:
             tool_result = tool_fn(**arguments)
+            if isinstance(tool_result, dict) and tool_result.get("status") == "error":
+                tracer.record_step(
+                    actor=Actor.POLICY_ENGINE,
+                    event_type=EventType.TOOL_CALL_BLOCKED,
+                    policy_decision=PolicyDecision.DENY,
+                    reason_code="INVALID_ARGUMENTS",
+                    tool_name=tool_name,
+                    arguments=arguments,
+                )
+                return {
+                    "status": "error",
+                    "decision": PolicyDecision.DENY,
+                    "reason": "INVALID_ARGUMENTS",
+                    "message": tool_result.get("message", "Tool rejected the arguments."),
+                }
             tracer.record_step(
                 actor=Actor.TOOL,
                 event_type=EventType.TOOL_EXECUTION_COMPLETED,

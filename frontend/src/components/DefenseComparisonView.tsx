@@ -18,7 +18,7 @@ const DEFENSE_LABELS: Record<string, string> = {
   "D0":       "Baseline — Prompt-only guardrails without software validation",
   "D1":       "Tool Gateway — Pre-execution threshold checks and domain allowlists",
   "D2":       "Canary Filter — Deterministic planted token leak interception",
-  "D3":       "Content Sanitizer — Tainted tag propagation & strip unsafe text",
+  "D3":       "Taint Tracking — Tainted context requires approval for outbound actions",
   "D1+D2+D3": "Full Stack — Defense-in-depth across all security boundaries",
 };
 
@@ -61,8 +61,8 @@ export default function DefenseComparisonView({ evaluations, onRefresh, loading 
               </span>
             </div>
             <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Empirical proof: compare Attack Success Rate (ASR) across each defense layer while
-              verifying that benign customer tasks continue to pass without degrading utility or inflating latency.
+              Compare recorded Attack Success Rate (ASR) across each defense layer and the
+              benign-task pass rate from the latest backend evaluation.
             </p>
           </div>
 
@@ -96,7 +96,7 @@ export default function DefenseComparisonView({ evaluations, onRefresh, loading 
             </div>
             <p className="mt-2 flex items-center gap-1 text-xs font-mono text-emerald-400">
               <TrendingDown className="w-3.5 h-3.5" />
-              100% exploit reduction under D1+D2+D3
+              {d0 && dFull ? `${Math.max(0, ((d0.attack_success_rate - dFull.attack_success_rate) / Math.max(d0.attack_success_rate, 0.0001) * 100)).toFixed(1)}% reduction in recorded exploits` : "Awaiting baseline and hardened runs"}
             </p>
           </div>
 
@@ -107,7 +107,7 @@ export default function DefenseComparisonView({ evaluations, onRefresh, loading 
             </span>
             <div className="text-xl font-bold font-mono text-blue-400">{benignPass}%</div>
             <p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-              10 of 10 benign support tasks completed
+              {dFull ? `${dFull.trials_per_attack} trial${dFull.trials_per_attack === 1 ? "" : "s"} per attack in the latest run` : "No evaluation loaded"}
             </p>
           </div>
 
@@ -116,9 +116,9 @@ export default function DefenseComparisonView({ evaluations, onRefresh, loading 
             <span className="text-xs font-mono uppercase tracking-wider block mb-2" style={{ color: "var(--text-muted)" }}>
               Latency Overhead
             </span>
-            <div className="text-xl font-bold font-mono" style={{ color: "var(--text-primary)" }}>&lt; 15 ms</div>
+            <div className="text-xl font-bold font-mono" style={{ color: "var(--text-primary)" }}>Not recorded</div>
             <p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-              Deterministic code vs LLM calls
+              Backend does not currently report latency
             </p>
           </div>
         </div>
@@ -188,7 +188,7 @@ export default function DefenseComparisonView({ evaluations, onRefresh, loading 
                         {apr}%
                       </td>
                       <td className="text-right font-mono text-sm" style={{ color: "var(--text-muted)" }}>
-                        $0.0000
+                        Not recorded
                       </td>
                     </tr>
                   );
@@ -216,12 +216,12 @@ export default function DefenseComparisonView({ evaluations, onRefresh, loading 
           {
             icon: Zap, accent: "text-blue-400",
             title: "Non-Degrading Utility",
-            body: "Benign user requests such as order status queries, customer refunds under $50, and valid address updates pass with 100% success rate."
+            body: "Benign utility is reported from the latest evaluation run; no unmeasured pass-rate guarantee is shown."
           },
           {
             icon: DollarSign, accent: "text-amber-400",
             title: "Deterministic Economics",
-            body: "Policy rules evaluate in <1ms pure Python code without incurring secondary LLM safety evaluator tokens or operational costs."
+            body: "Cost telemetry is not currently returned by the backend, so this view does not invent a price."
           },
         ].map(({ icon: Icon, accent, title, body }) => (
           <div key={title} className="rounded-2xl p-5" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>

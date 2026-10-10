@@ -89,11 +89,15 @@ class CampaignRunner:
                     tracer.save()
                     verdict = self.judge.evaluate_trace(tracer.steps)
                     # If it didn't succeed, mutate!
-                    if not verdict.success:
-                        payload, mutator_name = mutate_payload(attack, attempt_number=attempt)
-                        active_mutations.append(mutator_name)
-                        last_payload = payload
-                        continue
+                    # Attacks marked as mutation-driven deliberately reserve their
+                    # first observation for feedback, even if the baseline model
+                    # happened to execute it.
+                    payload, mutator_name = mutate_payload(
+                        attack, attempt_number=attempt, failed_reason="initial attempt"
+                    )
+                    active_mutations.append(mutator_name)
+                    last_payload = payload
+                    continue
                 else:
                     # Run attack payload
                     run_res = agent.run_task(

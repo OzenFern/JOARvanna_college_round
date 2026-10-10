@@ -12,7 +12,7 @@
 3. **Planted Canaries & Causal Tracing**: Tracks `SSN-CANARY-9182` and `API_KEY_CANARY_X9` egress with full taint propagation.
 4. **Exact Replay with Zero Model Calls**: Re-evaluate previously captured attack traces against hardened defense layers in under 15ms without spending API tokens.
 5. **Least-Privilege Capability Auditor**: Audits declared vs. used vs. reachable tool surface and flags over-permissioned endpoints (`execute_shell`, `http_request`).
-6. **Dual Model Support**: Works 100% offline out-of-the-box with a deterministic, fast mock adapter, and supports real Gemini models (`gemini-3.8-flash`) via secure in-memory keys.
+6. **Dual Model Support**: Works 100% offline out-of-the-box with a deterministic, fast mock adapter, and supports real Gemini models (`gemini-2.5-flash`) via secure in-memory keys.
 
 ---
 
@@ -161,7 +161,7 @@ If your agent runs as a standalone service, trigger automated red-team campaigns
 ```bash
 curl -X POST http://localhost:8000/api/v1/campaigns \
   -H "Content-Type: application/json" \
-  -H "X-Gemini-Key: your_optional_key_here" \
+  -H "X-API-Key: your_optional_key_here" \
   -d '{
     "attack_ids": ["ATK-01", "ATK-02", "ATK-03"],
     "defense": "D1+D2+D3",
@@ -201,8 +201,8 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ##  Security & Privacy Guarantees
 
-- **Zero Remote Storage of API Keys**: Keys submitted in the UI are held strictly in temporary server memory per request (`X-Gemini-Key`) and never written to SQLite, traces, logs, or disk.
-- **Sandboxed Execution**: All 7 tools (`lookup_order`, `read_document`, `memory_read`, `memory_write`, `send_email`, `process_refund`, `http_request`) operate on in-memory mocks. No live emails or transactions occur.
+- **Zero Remote Storage of API Keys**: Keys submitted in the UI are held strictly in temporary server memory per request (`X-API-Key`) and never written to SQLite, traces, logs, or disk.
+- **Sandboxed Execution**: The configured tools operate on in-memory mocks. No live emails or transactions occur.
 - **Deterministic Judges**: Policy enforcement and invariant judging are pure deterministic Python code—no second LLM judge that could hallucinate.
 
 ---

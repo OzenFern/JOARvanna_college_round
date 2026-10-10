@@ -21,7 +21,7 @@ export default function CampaignRunnerView({ onInspectTrace, attacks }: Campaign
   const [selectedDefense,  setSelectedDefense]  = useState("D0");
   const [selectedAdapter,  setSelectedAdapter]  = useState("mock");
   const [selectedAttacks,  setSelectedAttacks]  = useState<string[]>([]);
-  const [trials,           setTrials]           = useState(1);
+  const [trials,           setTrials]           = useState(3);
   const [loading,          setLoading]          = useState(false);
   const [results,          setResults]          = useState<AttackResult[]>([]);
   const [campaignStats,    setCampaignStats]    = useState<any>(null);

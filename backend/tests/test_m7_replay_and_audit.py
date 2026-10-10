@@ -72,9 +72,8 @@ def test_m7_permission_audit_flags_over_permissioned():
     # http_request: declared, but zero benign tasks need raw outbound HTTP -> over-permissioned!
     assert by_tool["http_request"].over_permissioned is True
 
-    # execute_shell: undeclared, reachable -> over-permissioned!
-    assert by_tool["execute_shell"].over_permissioned is True
-    assert by_tool["execute_shell"].declared is False
+    # Undeclared registry tools are not reachable from this agent context.
+    assert "execute_shell" not in by_tool
 
     # lookup_order, process_refund, send_email: needed by benign tasks -> NOT over-permissioned
     assert by_tool["lookup_order"].over_permissioned is False
@@ -87,4 +86,4 @@ def test_m7_permission_audit_flags_over_permissioned():
     api_items = res.json()
     api_by_tool = {i["tool_name"]: i for i in api_items}
     assert api_by_tool["http_request"]["over_permissioned"] is True
-    assert api_by_tool["execute_shell"]["over_permissioned"] is True
+    assert "execute_shell" not in api_by_tool

@@ -45,18 +45,20 @@ export default function Home() {
   const [attacks,     setAttacks]     = useState<any[]>([]);
   const [findings,    setFindings]    = useState<AttackResult[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationSummary[]>([]);
+  const [policy, setPolicy] = useState<{ tool_allowlist?: string[]; registered_tools?: string[] } | null>(null);
   const [auditItems,  setAuditItems]  = useState<PermissionAuditItem[]>([]);
   const [evalLoading, setEvalLoading] = useState<boolean>(false);
 
   const loadData = async () => {
     try {
-      const [h, atks, fnds, audit, latestEval, dbStat] = await Promise.allSettled([
+      const [h, atks, fnds, audit, latestEval, dbStat, policyResult] = await Promise.allSettled([
         api.getHealth(),
         api.getAttacks(),
         api.getFindings(),
         api.getPermissionAudit(),
         api.getLatestEvaluation(),
         api.getDbStatus(),
+        api.getPolicy(),
       ]);
 
       setBackendHealth(h.status === "fulfilled" ? "ok" : "offline");
@@ -67,6 +69,7 @@ export default function Home() {
         setEvaluations(latestEval.value);
       }
       if (dbStat.status     === "fulfilled") setDbStatus(dbStat.value);
+      if (policyResult.status === "fulfilled") setPolicy(policyResult.value);
     } catch (e) {
       setBackendHealth("offline");
     }
@@ -211,6 +214,7 @@ export default function Home() {
           {activeTab === "dashboard" && (
             <DashboardView
               evaluations={evaluations}
+              policy={policy}
               onNavigate={(tab) => setActiveTab(tab)}
               onRunQuickEvaluation={handleRunEvaluation}
               loading={evalLoading}

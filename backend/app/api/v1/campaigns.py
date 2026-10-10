@@ -22,14 +22,14 @@ _CAMPAIGN_STORE: Dict[str, dict] = {}
 @router.post("")
 def start_campaign(
     request: CampaignCreateRequest,
-    x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key"),
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
 ):
     from app.core.database import db
     campaign_id = str(uuid.uuid4())
     runner = CampaignRunner(
         active_defense=request.defense,
         model_adapter_type=request.adapter,
-        api_key=x_gemini_key,
+        api_key=x_api_key,
     )
     results = runner.run_campaign(
         attack_ids=request.attack_ids,

@@ -6,6 +6,7 @@ from app.api.v1.campaigns import router as campaigns_router
 from app.api.v1.evaluations import router as evaluations_router
 from app.api.v1.traces import router as traces_router
 from app.core.config import settings
+from app.tools.registry import TOOL_REGISTRY
 
 api_router = APIRouter()
 
@@ -47,6 +48,7 @@ def get_current_policy():
             "process_refund",
             "http_request",
         ],
+        "registered_tools": sorted(TOOL_REGISTRY.keys()),
         "canary_tokens": [
             "SSN-CANARY-9182",
             "API_KEY_CANARY_X9",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RotateCcw, ShieldCheck, AlertTriangle, Tag, Layers } from "lucide-react";
 import { AttackResult, TraceStep } from "@/types";
 import { api } from "@/lib/api";
@@ -27,18 +27,21 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
   const [replayLoading, setReplayLoading] = useState(false);
   const [replayResult,  setReplayResult]  = useState<any>(null);
   const [replayError,   setReplayError]   = useState<string | null>(null);
+  const [traceError,    setTraceError]    = useState<string | null>(null);
 
   const handleSelect = async (atk: AttackResult) => {
     setSelected(atk);
     setReplayResult(null);
     setReplayError(null);
+    setTraceError(null);
     if (atk.trace_ids?.length) {
       setLoadingTrace(true);
       try {
         const data = await api.getTrace(atk.trace_ids[0]);
         setSteps((data as any).steps || []);
-      } catch {
+      } catch (err: any) {
         setSteps([]);
+        setTraceError(err.message || "Unable to load this trace.");
       } finally {
         setLoadingTrace(false);
       }
@@ -46,6 +49,10 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
       setSteps([]);
     }
   };
+
+  useEffect(() => {
+    if (findings[0]) void handleSelect(findings[0]);
+  }, [findings]);
 
   const handleReplay = async () => {
     const traceId = selected?.trace_ids?.[0];
@@ -248,7 +255,12 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                   <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{steps.length} events</span>
                 </div>
 
-                {loadingTrace ? (
+                {traceError ? (
+                  <div className="py-6 text-center text-sm font-mono rounded-xl text-red-300"
+                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
+                    {traceError}
+                  </div>
+                ) : loadingTrace ? (
                   <div className="space-y-2">
                     {[...Array(4)].map((_, i) => (
                       <div key={i} className="skeleton h-16 rounded-xl" />

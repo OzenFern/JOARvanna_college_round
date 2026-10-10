@@ -11,7 +11,7 @@ router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 class EvaluationRunRequest(BaseModel):
     defenses: Optional[List[str]] = None
     attacks: Optional[List[str]] = None
-    trials: int = 1
+    trials: int = 3
     adapter: str = "mock"
 
 class EvaluationRunResponse(BaseModel):
@@ -21,12 +21,12 @@ class EvaluationRunResponse(BaseModel):
 @router.post("/run", response_model=EvaluationRunResponse)
 def run_evaluation_matrix(
     request: EvaluationRunRequest = EvaluationRunRequest(),
-    x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key"),
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
 ):
     runner = EvaluationRunner(
         model_adapter_type=request.adapter,
         trials_per_attack=request.trials,
-        api_key=x_gemini_key,
+        api_key=x_api_key,
     )
     result = runner.run_matrix(
         defenses=request.defenses,
