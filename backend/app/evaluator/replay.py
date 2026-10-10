@@ -1,4 +1,4 @@
-"""Exact Replay Engine per PRD Section 10.4."""
+"""Exact Replay Engine"""
 
 from typing import Any, Dict, List, Optional
 from app.core.contracts import Actor, EventType, TraceStep

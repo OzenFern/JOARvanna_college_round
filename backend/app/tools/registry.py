@@ -1,4 +1,4 @@
-"""Mock tools implementation per PRD Section 5.2."""
+"""Mock tools implementation"""
 
 from pathlib import Path
 from typing import Any, Dict

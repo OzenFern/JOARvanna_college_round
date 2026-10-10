@@ -1,4 +1,4 @@
-"""Rule-based Attack Mutators per PRD Section 8.2."""
+"""Rule-based Attack Mutators"""
 
 from typing import Tuple
 from app.redteam.catalog import AttackDefinition

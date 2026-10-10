@@ -1,4 +1,4 @@
-"""Rule-based Invariant Judge and Severity Scorer per PRD Section 9."""
+"""Rule-based Invariant Judge and Severity Scorer"""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field

@@ -1,4 +1,4 @@
-"""Target Agent (Customer Support Assistant) Sandbox Runner per PRD Section 5.1."""
+"""Target Agent (Customer Support Assistant) Sandbox Runner"""
 
 from typing import Any, Dict, List, Optional
 from app.agent.adapter_base import ModelAdapter

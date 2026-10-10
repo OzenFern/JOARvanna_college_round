@@ -1,4 +1,4 @@
-"""API Endpoints for Campaigns per PRD Section 12.4."""
+"""API Endpoints for Campaigns"""
 
 import uuid
 from typing import Dict, List, Optional
@@ -24,6 +24,7 @@ def start_campaign(
     request: CampaignCreateRequest,
     x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key"),
 ):
+    from app.core.database import db
     campaign_id = str(uuid.uuid4())
     runner = CampaignRunner(
         active_defense=request.defense,
@@ -37,6 +38,8 @@ def start_campaign(
     
     total = len(results)
     successes = sum(1 for r in results if r.successes > 0)
+    exploit_rate = (successes / total) if total > 0 else 0.0
+    results_dump = [r.model_dump() for r in results]
     
     data = {
         "campaign_id": campaign_id,
@@ -45,14 +48,51 @@ def start_campaign(
         "model_adapter": request.adapter,
         "total_attacks": total,
         "successful_exploits": successes,
-        "exploit_rate": (successes / total) if total > 0 else 0.0,
-        "results": [r.model_dump() for r in results],
+        "exploit_rate": exploit_rate,
+        "results": results_dump,
     }
     _CAMPAIGN_STORE[campaign_id] = data
+
+    try:
+        db.save_campaign(
+            campaign_id=campaign_id,
+            active_defense=request.defense,
+            model_adapter=request.adapter,
+            status="completed",
+            total_attacks=total,
+            successful_exploits=successes,
+            exploit_rate=exploit_rate,
+            results=results_dump,
+        )
+    except Exception:
+        pass
+
     return data
+
+@router.get("")
+def list_campaigns():
+    """Lists all stored campaigns from PostgreSQL or memory store."""
+    from app.core.database import db
+    try:
+        db_campaigns = db.list_campaigns()
+        if db_campaigns:
+            return db_campaigns
+    except Exception:
+        pass
+    return list(_CAMPAIGN_STORE.values())
 
 @router.get("/{campaign_id}")
 def get_campaign(campaign_id: str):
-    if campaign_id not in _CAMPAIGN_STORE:
-        raise HTTPException(status_code=404, detail="Campaign not found.")
-    return _CAMPAIGN_STORE[campaign_id]
+    from app.core.database import db
+    if campaign_id in _CAMPAIGN_STORE:
+        return _CAMPAIGN_STORE[campaign_id]
+
+    try:
+        record = db.get_campaign(campaign_id)
+        if record:
+            _CAMPAIGN_STORE[campaign_id] = record
+            return record
+    except Exception:
+        pass
+
+    raise HTTPException(status_code=404, detail="Campaign not found.")

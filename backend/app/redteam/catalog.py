@@ -1,4 +1,4 @@
-"""Attack Library Catalog (10 Attacks) per PRD Section 8.1."""
+"""Attack Library Catalog (10 Attacks)"""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field

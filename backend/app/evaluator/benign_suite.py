@@ -1,4 +1,4 @@
-"""Benign Regression Suite (10 Legitimate Tasks) per PRD Section 10.5."""
+"""Benign Regression Suite (10 Legitimate Tasks)"""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field

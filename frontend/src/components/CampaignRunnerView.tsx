@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Terminal, Play, ShieldAlert, CheckCircle2, AlertTriangle, ArrowRight, Layers } from "lucide-react";
+import { Terminal, Play, CheckCircle2, AlertTriangle, Layers } from "lucide-react";
 import { AttackResult } from "@/types";
 import { api } from "@/lib/api";
 
@@ -10,186 +10,199 @@ interface CampaignRunnerViewProps {
   attacks: any[];
 }
 
+const SEVERITY_STYLE: Record<string, React.CSSProperties> = {
+  CRITICAL: { background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.25)" },
+  HIGH:     { background: "rgba(245,158,11,0.12)", color: "#FCD34D", border: "1px solid rgba(245,158,11,0.25)" },
+  MEDIUM:   { background: "rgba(234,179,8,0.10)",  color: "#FDE047", border: "1px solid rgba(234,179,8,0.22)" },
+  LOW:      { background: "rgba(255,255,255,0.05)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" },
+};
+
 export default function CampaignRunnerView({ onInspectTrace, attacks }: CampaignRunnerViewProps) {
-  const [selectedDefense, setSelectedDefense] = useState<string>("D0");
-  const [selectedAdapter, setSelectedAdapter] = useState<string>("mock");
-  const [selectedAttacks, setSelectedAttacks] = useState<string[]>([]);
-  const [trials, setTrials] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [results, setResults] = useState<AttackResult[]>([]);
-  const [campaignStats, setCampaignStats] = useState<any>(null);
+  const [selectedDefense,  setSelectedDefense]  = useState("D0");
+  const [selectedAdapter,  setSelectedAdapter]  = useState("mock");
+  const [selectedAttacks,  setSelectedAttacks]  = useState<string[]>([]);
+  const [trials,           setTrials]           = useState(1);
+  const [loading,          setLoading]          = useState(false);
+  const [results,          setResults]          = useState<AttackResult[]>([]);
+  const [campaignStats,    setCampaignStats]    = useState<any>(null);
+  const [error,            setError]            = useState<string | null>(null);
 
-  const handleToggleAttack = (id: string) => {
-    setSelectedAttacks((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
-    );
-  };
+  const handleToggle = (id: string) =>
+    setSelectedAttacks(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
 
-  const handleSelectAll = () => {
-    if (selectedAttacks.length === attacks.length) {
-      setSelectedAttacks([]);
-    } else {
-      setSelectedAttacks(attacks.map((a) => a.id));
-    }
-  };
+  const handleSelectAll = () =>
+    setSelectedAttacks(selectedAttacks.length === attacks.length ? [] : attacks.map(a => a.id));
 
   const handleLaunch = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const payload = {
+      const data = await api.startCampaign({
         attack_ids: selectedAttacks.length > 0 ? selectedAttacks : undefined,
         defense: selectedDefense,
         adapter: selectedAdapter,
         trials,
-      };
-      const data = await api.startCampaign(payload);
+      });
       setCampaignStats(data);
       setResults(data.results || []);
     } catch (err: any) {
-      alert("Error starting campaign: " + err.message);
+      setError(err.message || "Campaign failed.");
     } finally {
       setLoading(false);
     }
   };
 
+  const selectStyle: React.CSSProperties = {
+    background: "var(--bg-base)",
+    border: "1px solid var(--border-default)",
+    color: "var(--text-primary)",
+    borderRadius: "8px",
+    padding: "7px 12px",
+    fontSize: "11px",
+    fontFamily: "inherit",
+    width: "100%",
+    outline: "none",
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Configuration Header Panel */}
-      <div className="rounded-xl border border-zinc-800 bg-[#121620] p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+    <div className="space-y-5 fade-in">
+
+      {/* ── Configuration Panel ── */}
+      <div className="rounded-2xl" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
-            <h1 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
+            <h1 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--text-primary)" }}>
               <Terminal className="w-4 h-4 text-red-400" />
-              <span>Red Team Campaign Runner</span>
+              Red Team Campaign Runner
             </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              Select attacks, configure active defense layers, and launch an autonomous red-team evaluation run.
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+              Configure attacks, select defense layers, and launch an autonomous red-team evaluation.
             </p>
           </div>
-
           <button
             onClick={handleLaunch}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono bg-red-600 hover:bg-red-500 text-white font-medium transition shadow-sm disabled:opacity-50"
+            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-medium text-white transition disabled:opacity-45"
+            style={{ background: "#C41E1E", boxShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+            onMouseEnter={e => !loading && (e.currentTarget.style.background = "#DC2626")}
+            onMouseLeave={e => !loading && (e.currentTarget.style.background = "#C41E1E")}
           >
-            {loading ? (
-              <span className="animate-spin inline-block h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-              <Play className="w-3.5 h-3.5 fill-current" />
-            )}
-            <span>{loading ? "Executing Campaign..." : "Launch Campaign"}</span>
+            {loading
+              ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <Play className="w-3.5 h-3.5 fill-current" />
+            }
+            <span>{loading ? "Executing..." : "Launch Campaign"}</span>
           </button>
         </div>
 
-        {/* Configuration Controls Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
-          {/* Defense Selector */}
-          <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
-              Active Defense Configuration
-            </label>
-            <select
-              value={selectedDefense}
-              onChange={(e) => setSelectedDefense(e.target.value)}
-              className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
-            >
-              <option value="D0">D0 — Baseline (Unhardened Prompt Only)</option>
-              <option value="D1">D1 — Tool Gatekeeper (Allowlists &amp; Thresholds)</option>
-              <option value="D2">D2 — Canary Egress Filter (Canary Shield)</option>
-              <option value="D3">D3 — Content Sanitizer &amp; Taint Rule</option>
-              <option value="D1+D2+D3">D1+D2+D3 — Full Stack Defense (All Layers)</option>
-            </select>
+        <div className="p-6 space-y-5">
+          {/* Config Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted)" }}>
+                Active Defense
+              </label>
+              <select value={selectedDefense} onChange={e => setSelectedDefense(e.target.value)} style={selectStyle}>
+                <option value="D0">D0 — Baseline (Prompt Only)</option>
+                <option value="D1">D1 — Tool Gatekeeper</option>
+                <option value="D2">D2 — Canary Egress Filter</option>
+                <option value="D3">D3 — Content Sanitizer</option>
+                <option value="D1+D2+D3">D1+D2+D3 — Full Stack</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted)" }}>
+                Target Model Adapter
+              </label>
+              <select value={selectedAdapter} onChange={e => setSelectedAdapter(e.target.value)} style={selectStyle}>
+                <option value="mock">Deterministic Mock (Free / Fast)</option>
+                <option value="gemini">Gemini (Requires API Key)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted)" }}>
+                Trials Per Attack
+              </label>
+              <input
+                type="number" min={1} max={10} value={trials}
+                onChange={e => setTrials(parseInt(e.target.value) || 1)}
+                style={{ ...selectStyle, width: "100%" }}
+                onFocus={e => (e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)")}
+                onBlur={e => (e.currentTarget.style.borderColor = "var(--border-default)")}
+              />
+            </div>
           </div>
 
-          {/* Model Adapter Selector */}
-          <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
-              Target Model Adapter
-            </label>
-            <select
-              value={selectedAdapter}
-              onChange={(e) => setSelectedAdapter(e.target.value)}
-              className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
-            >
-              <option value="mock">Deterministic Mock Model (Default / Free / Fast)</option>
-              <option value="gemini">Gemini Model (Requires in-memory API key)</option>
-            </select>
-          </div>
+          {/* Attack Picker */}
+          <div className="pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-mono" style={{ color: "var(--text-secondary)" }}>
+                Selected Attacks ({selectedAttacks.length > 0 ? selectedAttacks.length : attacks.length} of {attacks.length}):
+              </span>
+              <button onClick={handleSelectAll} className="text-[11px] font-mono text-red-400 hover:text-red-300 transition">
+                {selectedAttacks.length === attacks.length ? "Deselect All" : "Select All"}
+              </button>
+            </div>
 
-          {/* Trials Count */}
-          <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
-              Independent Trials Per Attack
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={10}
-              value={trials}
-              onChange={(e) => setTrials(parseInt(e.target.value) || 1)}
-              className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
-            />
-          </div>
-        </div>
-
-        {/* Quick Attack Picker */}
-        <div className="mt-5 pt-4 border-t border-zinc-800/60">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-mono text-zinc-300">
-              Selected Attacks ({selectedAttacks.length > 0 ? selectedAttacks.length : attacks.length} of {attacks.length}):
-            </span>
-            <button
-              onClick={handleSelectAll}
-              className="text-xs font-mono text-red-400 hover:text-red-300 transition"
-            >
-              {selectedAttacks.length === attacks.length ? "Deselect All" : "Select All 10"}
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {attacks.map((atk) => {
-              const isSelected = selectedAttacks.includes(atk.id) || selectedAttacks.length === 0;
-              return (
-                <button
-                  key={atk.id}
-                  onClick={() => handleToggleAttack(atk.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-mono transition border ${
-                    isSelected
-                      ? "bg-zinc-800 text-zinc-200 border-zinc-700"
-                      : "bg-[#0B0D13] text-zinc-500 border-zinc-800/80 hover:text-zinc-400"
-                  }`}
-                >
-                  {atk.id}: {atk.name.split(" ")[0]}
-                </button>
-              );
-            })}
+            <div className="flex flex-wrap gap-2">
+              {attacks.map(atk => {
+                const isSelected = selectedAttacks.includes(atk.id) || selectedAttacks.length === 0;
+                return (
+                  <button
+                    key={atk.id}
+                    onClick={() => handleToggle(atk.id)}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-mono transition"
+                    style={isSelected
+                      ? { background: "rgba(255,255,255,0.08)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }
+                      : { background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }
+                    }
+                  >
+                    {atk.id}: {atk.name?.split(" ")[0]}
+                  </button>
+                );
+              })}
+              {attacks.length === 0 && (
+                <span className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>
+                  Loading attacks from backend...
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Results Table Panel */}
+      {/* ── Error Banner ── */}
+      {error && (
+        <div className="rounded-xl px-4 py-3 text-xs font-mono flex items-center gap-2"
+          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5" }}>
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* ── Results Table ── */}
       {results.length > 0 && (
-        <div className="rounded-xl border border-zinc-800 bg-[#121620] overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0E111A]">
+        <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+          <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.01)" }}>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-200 font-semibold uppercase tracking-wider">
+              <span className="text-xs font-mono font-semibold" style={{ color: "var(--text-primary)" }}>
                 Campaign Outcomes ({results.length} Scenarios)
               </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded"
+                style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
                 Defense: {selectedDefense}
               </span>
             </div>
-
             {campaignStats && (
-              <div className="text-xs font-mono text-zinc-400 flex items-center gap-4">
-                <span>
-                  Exploits:{" "}
+              <div className="flex items-center gap-4 text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>
+                <span>Exploits:{" "}
                   <strong className={campaignStats.successful_exploits > 0 ? "text-red-400" : "text-emerald-400"}>
                     {campaignStats.successful_exploits} / {campaignStats.total_attacks}
                   </strong>
                 </span>
-                <span>
-                  Rate:{" "}
+                <span>Rate:{" "}
                   <strong className={campaignStats.exploit_rate > 0 ? "text-red-400" : "text-emerald-400"}>
                     {(campaignStats.exploit_rate * 100).toFixed(1)}%
                   </strong>
@@ -199,83 +212,75 @@ export default function CampaignRunnerView({ onInspectTrace, attacks }: Campaign
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left data-table">
               <thead>
-                <tr className="border-b border-zinc-800/80 bg-zinc-900/40 text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
-                  <th className="py-2.5 px-4">Attack</th>
-                  <th className="py-2.5 px-4">Surface</th>
-                  <th className="py-2.5 px-4">Result</th>
-                  <th className="py-2.5 px-4">Severity</th>
-                  <th className="py-2.5 px-4">Violations</th>
-                  <th className="py-2.5 px-4">Mutations</th>
-                  <th className="py-2.5 px-4 text-right">Action</th>
+                <tr>
+                  <th>Attack</th>
+                  <th>Surface</th>
+                  <th>Result</th>
+                  <th>Severity</th>
+                  <th>Violations</th>
+                  <th>Mutations</th>
+                  <th className="text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50 font-mono">
-                {results.map((r) => {
+              <tbody>
+                {results.map(r => {
                   const isExploit = r.successes > 0;
                   return (
-                    <tr key={r.attack_id} className="hover:bg-zinc-900/30 transition">
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-zinc-200">{r.attack_id}</div>
-                        <div className="text-[11px] text-zinc-400 max-w-xs truncate">{r.name}</div>
+                    <tr key={r.attack_id}>
+                      <td>
+                        <div className="font-mono font-semibold text-[12px]" style={{ color: "var(--text-primary)" }}>{r.attack_id}</div>
+                        <div className="text-[10px] max-w-[180px] truncate" style={{ color: "var(--text-muted)" }}>{r.name}</div>
                       </td>
-
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] uppercase font-mono bg-zinc-900 border border-zinc-800 text-zinc-300">
+                      <td>
+                        <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded"
+                          style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}>
                           {r.surface}
                         </span>
                       </td>
-
-                      <td className="py-3 px-4">
+                      <td>
                         {isExploit ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-red-950/70 text-red-400 border border-red-800/40">
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>EXPLOIT CONFIRMED</span>
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold px-2 py-0.5 rounded"
+                            style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }}>
+                            <AlertTriangle className="w-3 h-3" /> EXPLOIT CONFIRMED
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>BLOCKED BY POLICY</span>
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold px-2 py-0.5 rounded"
+                            style={{ background: "rgba(16,185,129,0.10)", color: "#6EE7B7", border: "1px solid rgba(16,185,129,0.20)" }}>
+                            <CheckCircle2 className="w-3 h-3" /> BLOCKED
                           </span>
                         )}
                       </td>
-
-                      <td className="py-3 px-4">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          r.severity === "CRITICAL" ? "bg-red-900/60 text-red-300 border border-red-700" :
-                          r.severity === "HIGH" ? "bg-amber-900/60 text-amber-300 border border-amber-700" :
-                          r.severity === "MEDIUM" ? "bg-yellow-950/60 text-yellow-300 border border-yellow-800" :
-                          "bg-zinc-800 text-zinc-400"
-                        }`}>
+                      <td>
+                        <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded"
+                          style={SEVERITY_STYLE[r.severity] || SEVERITY_STYLE.LOW}>
                           {r.severity}
                         </span>
                       </td>
-
-                      <td className="py-3 px-4 text-zinc-400">
-                        {r.violated_invariants.length > 0 ? (
-                          <span className="text-red-400 font-bold">{r.violated_invariants.join(", ")}</span>
-                        ) : (
-                          <span className="text-zinc-600">None</span>
-                        )}
+                      <td className="font-mono text-[11px]">
+                        {r.violated_invariants.length > 0
+                          ? <span className="text-red-400 font-bold">{r.violated_invariants.join(", ")}</span>
+                          : <span style={{ color: "var(--text-muted)" }}>None</span>
+                        }
                       </td>
-
-                      <td className="py-3 px-4 text-zinc-400">
-                        {r.mutations_used.length > 0 ? (
-                          <span className="text-amber-400">{r.mutations_used.join(", ")}</span>
-                        ) : (
-                          <span className="text-zinc-600">Direct</span>
-                        )}
+                      <td className="font-mono text-[11px]">
+                        {r.mutations_used.length > 0
+                          ? <span className="text-amber-400">{r.mutations_used.join(", ")}</span>
+                          : <span style={{ color: "var(--text-muted)" }}>Direct</span>
+                        }
                       </td>
-
-                      <td className="py-3 px-4 text-right">
+                      <td className="text-right">
                         {r.trace_ids.length > 0 && (
                           <button
                             onClick={() => onInspectTrace(r.trace_ids[0])}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition border border-zinc-700"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono transition"
+                            style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                           >
                             <Layers className="w-3 h-3 text-red-400" />
-                            <span>Inspect Trace</span>
+                            Inspect Trace
                           </button>
                         )}
                       </td>

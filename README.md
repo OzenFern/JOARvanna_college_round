@@ -5,7 +5,7 @@
 
 ---
 
-## 🚀 Key Highlights & Architectural Core
+##  Key Highlights & Architectural Core
 
 1. **Autonomous Red-Team Catalog (10 Vectors)**: Multi-surface exploits covering prompt injection, indirect knowledge-base injection, memory poisoning, path traversal, argument abuse, and unauthorized scope escalation.
 2. **Deterministic Pre-Execution Tool Gateway**: Policy gates (`D1`, `D2`, `D3`, `D1+D2+D3`) intercept tool calls in application code *before* mock side-effects or network packets trigger.
@@ -16,7 +16,7 @@
 
 ---
 
-## 🛠️ Monorepo Structure
+##  Monorepo Structure
 
 ```text
 JOARvanna_college_round/
@@ -24,13 +24,14 @@ JOARvanna_college_round/
 │   ├── app/
 │   │   ├── agent/                 # Target agent, MockModelAdapter & GeminiModelAdapter
 │   │   ├── api/v1/                # REST endpoints (/campaigns, /evaluations, /traces, /audit)
-│   │   ├── core/                  # Configuration & shared Pydantic contracts
+│   │   ├── core/                  # Configuration, database.py (PostgreSQL DDL & queries)
 │   │   ├── evaluator/             # TraceRecorder, Judge, BenignSuiteRunner, ExactReplayEngine
 │   │   ├── redteam/               # Attack catalog (ATK-01 to ATK-10), Mutators, BudgetController
 │   │   ├── security/              # Deterministic PolicyEngine (D1, D2, D3) & Gateway
 │   │   └── tools/                 # Sandboxed mock tools & planted canary database
-│   ├── data/                      # SQLite DB, documents/, traces/, evaluations/, blocklist.txt
+│   ├── data/                      # documents/, traces/, evaluations/, blocklist.txt
 │   ├── tests/                     # 27 comprehensive pytest tests (100% passing)
+│   ├── schema.sql                 # PostgreSQL DDL schema & indexes
 │   └── pyproject.toml             # uv / hatchling dependency manifest
 ├── frontend/                       # Next.js 14 (App Router, Tailwind CSS, Lucide React)
 │   ├── src/
@@ -40,14 +41,32 @@ JOARvanna_college_round/
 │   │   ├── lib/                   # Typed API client with in-memory key store
 │   │   └── types/                 # TypeScript interfaces matching backend contracts
 │   └── package.json
-└── docs/
-    ├── agentbreak_prd.md          # 24-page foundational architecture specification
-    └── DEMO_SCRIPT.md             # 3-minute hackathon judging rehearsal walkthrough
-```
+├── docs/
+│   └── database_schema.md         # Full PostgreSQL architecture & schema specification
+├── schema.sql                     # Root PostgreSQL DDL migration script
+└── .env.example                   # Complete configuration template
 
 ---
 
-## ⚡ Quickstart: Running Locally
+## 💾 PostgreSQL Database Setup
+
+AgentBreak persists execution traces, campaign runs, and evaluation matrices in PostgreSQL.
+
+1. **Configure Connection**:
+   Add your PostgreSQL connection string in `.env` (or `backend/.env`):
+   ```bash
+   DATABASE_URL=postgresql://username:password@localhost:5432/agentbreak_db
+   ```
+2. **Apply the Schema**:
+   The backend applies the schema idempotently upon startup. You can also run the DDL manually:
+   ```bash
+   psql "$DATABASE_URL" -f schema.sql
+   ```
+   *Compatible with Supabase, Neon, Render PostgreSQL, AWS RDS, and Docker.* Detailed table definitions and indexes are documented in [docs/database_schema.md](file:///c:/Users/jonat/OneDrive/Desktop/bnb_college_round/JOARvanna_college_round/docs/database_schema.md).
+
+---
+
+## 🚀 Quickstart: Running Locally
 
 ### 1. Start the Backend (FastAPI on Port 8000)
 ```bash
@@ -75,7 +94,7 @@ uv run pytest
 
 ---
 
-## 🔌 How to Connect Your Own AI Agent to AgentBreak
+##  How to Connect Your Own AI Agent to AgentBreak
 
 AgentBreak is designed to red-team and evaluate **any** tool-using agent architecture. You can integrate custom agents using either the **Python SDK Interface** or the **REST API**.
 
@@ -168,7 +187,7 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ---
 
-## 🛡️ Defense Configurations Explained
+##  Defense Configurations Explained
 
 | Defense | Name | Mechanism | Primary Invariant Guarded |
 | :--- | :--- | :--- | :--- |
@@ -180,7 +199,7 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ---
 
-## 🔒 Security & Privacy Guarantees
+##  Security & Privacy Guarantees
 
 - **Zero Remote Storage of API Keys**: Keys submitted in the UI are held strictly in temporary server memory per request (`X-Gemini-Key`) and never written to SQLite, traces, logs, or disk.
 - **Sandboxed Execution**: All 7 tools (`lookup_order`, `read_document`, `memory_read`, `memory_write`, `send_email`, `process_refund`, `http_request`) operate on in-memory mocks. No live emails or transactions occur.
@@ -188,5 +207,5 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ---
 
-## 📜 License
+##  License
 MIT License. Built for autonomous AI safety and verifiable red-teaming.
