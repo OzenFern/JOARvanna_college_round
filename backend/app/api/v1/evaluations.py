@@ -34,6 +34,17 @@ def run_evaluation_matrix(
     )
     return result
 
+@router.get("/latest", response_model=List[EvaluationSummary])
+def get_latest_evaluation():
+    """Returns the most recent pre-generated or cached evaluation matrix."""
+    summaries = EvaluationRunner.get_latest_evaluation()
+    if not summaries:
+        # Generate default baseline matrix if none exists
+        runner = EvaluationRunner(model_adapter_type="mock")
+        res = runner.run_matrix()
+        summaries = res["summaries"]
+    return summaries
+
 @router.get("/{evaluation_id}", response_model=List[EvaluationSummary])
 def get_evaluation(evaluation_id: str):
     summaries = EvaluationRunner.get_evaluation(evaluation_id)

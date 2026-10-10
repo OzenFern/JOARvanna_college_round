@@ -42,11 +42,12 @@ export default function Home() {
   // Load initial datasets
   const loadData = async () => {
     try {
-      const [h, atks, fnds, audit] = await Promise.allSettled([
+      const [h, atks, fnds, audit, latestEval] = await Promise.allSettled([
         api.getHealth(),
         api.getAttacks(),
         api.getFindings(),
         api.getPermissionAudit(),
+        api.getLatestEvaluation(),
       ]);
 
       if (h.status === "fulfilled") setBackendHealth(h.value.status);
@@ -55,6 +56,9 @@ export default function Home() {
       if (atks.status === "fulfilled") setAttacks(atks.value);
       if (fnds.status === "fulfilled") setFindings(fnds.value);
       if (audit.status === "fulfilled") setAuditItems(audit.value);
+      if (latestEval.status === "fulfilled" && latestEval.value.length > 0) {
+        setEvaluations(latestEval.value);
+      }
     } catch (e) {
       console.error("Failed to load initial data", e);
     }
@@ -76,8 +80,6 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
-    // Also trigger initial quick evaluation if not populated
-    handleRunEvaluation();
   }, []);
 
   const handleSaveKey = () => {

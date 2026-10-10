@@ -107,6 +107,25 @@ class EvaluationRunner:
         }
 
     @classmethod
+    def get_latest_evaluation(cls) -> Optional[List[EvaluationSummary]]:
+        if _EVALUATION_CACHE:
+            latest_id = list(_EVALUATION_CACHE.keys())[-1]
+            return _EVALUATION_CACHE[latest_id]
+
+        eval_dir = settings.DATA_DIR / "evaluations"
+        if eval_dir.exists():
+            files = sorted(eval_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if files:
+                try:
+                    data = json.loads(files[0].read_text(encoding="utf-8"))
+                    summaries = [EvaluationSummary(**row) for row in data]
+                    _EVALUATION_CACHE[files[0].stem] = summaries
+                    return summaries
+                except Exception:
+                    pass
+        return None
+
+    @classmethod
     def get_evaluation(cls, eval_id: str) -> Optional[List[EvaluationSummary]]:
         if eval_id in _EVALUATION_CACHE:
             return _EVALUATION_CACHE[eval_id]
