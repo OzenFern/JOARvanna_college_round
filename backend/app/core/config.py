@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     TRACES_DIR: Path = DATA_DIR / "traces"
     BLOCKLIST_PATH: Path = DATA_DIR / "blocklist.txt"
     DB_PATH: Path = DATA_DIR / "agentbreak.db"
+    SQLITE_BACKUP_PATH: Path = DATA_DIR / "agentbreak_backup.db"
+    DATABASE_URL: str = ""  # Empty defaults to sqlite:///DATA_DIR/agentbreak.db; supports postgresql://...
     
     # CORS
     CORS_ORIGINS: list[str] = ["*"]

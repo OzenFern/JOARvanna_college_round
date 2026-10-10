@@ -150,7 +150,9 @@ activemq-data/
 
 # Environments
 .env
+.env.*
 .envrc
+!.env.example
 .venv
 env/
 venv/
@@ -231,5 +233,10 @@ yarn-error.log*
 
 # Database & local data
 *.db
+*.sqlite
+*.sqlite3
 backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.sqlite3
 backend/data/traces/*.json
+backend/data/evaluations/*.json

@@ -5,7 +5,7 @@
 
 ---
 
-## 🚀 Key Highlights & Architectural Core
+##  Key Highlights & Architectural Core
 
 1. **Autonomous Red-Team Catalog (10 Vectors)**: Multi-surface exploits covering prompt injection, indirect knowledge-base injection, memory poisoning, path traversal, argument abuse, and unauthorized scope escalation.
 2. **Deterministic Pre-Execution Tool Gateway**: Policy gates (`D1`, `D2`, `D3`, `D1+D2+D3`) intercept tool calls in application code *before* mock side-effects or network packets trigger.
@@ -16,7 +16,7 @@
 
 ---
 
-## 🛠️ Monorepo Structure
+##  Monorepo Structure
 
 ```text
 JOARvanna_college_round/
@@ -47,7 +47,7 @@ JOARvanna_college_round/
 
 ---
 
-## ⚡ Quickstart: Running Locally
+##  Quickstart: Running Locally
 
 ### 1. Start the Backend (FastAPI on Port 8000)
 ```bash
@@ -75,7 +75,7 @@ uv run pytest
 
 ---
 
-## 🔌 How to Connect Your Own AI Agent to AgentBreak
+##  How to Connect Your Own AI Agent to AgentBreak
 
 AgentBreak is designed to red-team and evaluate **any** tool-using agent architecture. You can integrate custom agents using either the **Python SDK Interface** or the **REST API**.
 
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ---
 
-## 🛡️ Defense Configurations Explained
+##  Defense Configurations Explained
 
 | Defense | Name | Mechanism | Primary Invariant Guarded |
 | :--- | :--- | :--- | :--- |
@@ -180,7 +180,7 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ---
 
-## 🔒 Security & Privacy Guarantees
+##  Security & Privacy Guarantees
 
 - **Zero Remote Storage of API Keys**: Keys submitted in the UI are held strictly in temporary server memory per request (`X-Gemini-Key`) and never written to SQLite, traces, logs, or disk.
 - **Sandboxed Execution**: All 7 tools (`lookup_order`, `read_document`, `memory_read`, `memory_write`, `send_email`, `process_refund`, `http_request`) operate on in-memory mocks. No live emails or transactions occur.
@@ -188,5 +188,5 @@ curl -X POST http://localhost:8000/api/v1/traces/{trace_id}/replay \
 
 ---
 
-## 📜 License
+##  License
 MIT License. Built for autonomous AI safety and verifiable red-teaming.

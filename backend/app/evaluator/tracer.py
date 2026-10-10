@@ -60,22 +60,47 @@ class TraceRecorder:
         return step
 
     def save(self) -> Path:
-        """Saves the trace as a structured JSON file under data/traces/."""
+        """Saves the trace to the database and as a structured JSON file."""
+        from app.core.database import db
         trace_file = settings.TRACES_DIR / f"{self.trace_id}.json"
+        created_at = datetime.now(timezone.utc).isoformat()
+        steps_dump = [step.model_dump() for step in self.steps]
         data = {
             "trace_id": self.trace_id,
             "active_defense": self.active_defense,
             "model_adapter": self.model_adapter,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": created_at,
             "total_steps": len(self.steps),
-            "steps": [step.model_dump() for step in self.steps],
+            "steps": steps_dump,
         }
         trace_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+        # Save to database (SQLite / PostgreSQL)
+        try:
+            db.save_trace(
+                trace_id=self.trace_id,
+                active_defense=self.active_defense,
+                model_adapter=self.model_adapter,
+                total_steps=len(self.steps),
+                steps=steps_dump,
+                created_at=created_at,
+            )
+        except Exception:
+            pass
+
         return trace_file
 
     @classmethod
     def load(cls, trace_id: str) -> Optional[dict]:
-        """Loads a recorded trace JSON from disk."""
+        """Loads a recorded trace from the database or disk fallback."""
+        from app.core.database import db
+        try:
+            record = db.get_trace(trace_id)
+            if record:
+                return record
+        except Exception:
+            pass
+
         trace_file = settings.TRACES_DIR / f"{trace_id}.json"
         if not trace_file.exists():
             return None
