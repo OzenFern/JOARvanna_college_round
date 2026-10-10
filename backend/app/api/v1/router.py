@@ -68,29 +68,12 @@ def get_permission_audit():
     auditor = PermissionAuditor(declared_tools=DEFAULT_TOOLS)
     return [item.model_dump() for item in auditor.audit()]
 
-@api_router.get("/backup/status")
-def get_backup_status():
-    """Returns database configuration and offline backup status."""
+@api_router.get("/db/status")
+def get_db_status():
+    """Returns database connectivity status."""
     from app.core.database import db
-    backup_file = settings.SQLITE_BACKUP_PATH
-    db_file = settings.DB_PATH
     return {
-        "engine": "postgresql" if db.is_postgres else "sqlite",
-        "is_postgres": db.is_postgres,
-        "sqlite_db_exists": db_file.exists(),
-        "sqlite_db_size_bytes": db_file.stat().st_size if db_file.exists() else 0,
-        "backup_exists": backup_file.exists(),
-        "backup_size_bytes": backup_file.stat().st_size if backup_file.exists() else 0,
-        "backup_path": str(backup_file),
-    }
-
-@api_router.post("/backup/export")
-def create_offline_backup():
-    """Triggers an offline SQLite backup export for safe persistence."""
-    from app.core.database import db
-    backup_path = db.export_sqlite_backup()
-    return {
-        "status": "success",
-        "backup_path": str(backup_path),
-        "size_bytes": backup_path.stat().st_size if backup_path.exists() else 0,
+        "engine": "postgresql",
+        "ready": db._ready,
+        "configured": bool(db.raw_url),
     }

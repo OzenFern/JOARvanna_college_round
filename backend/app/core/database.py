@@ -29,25 +29,33 @@ except ImportError:
 class DatabaseManager:
     def __init__(self, database_url: Optional[str] = None):
         self.raw_url = database_url or settings.DATABASE_URL
-        if not self.raw_url:
-            raise RuntimeError(
-                "DATABASE_URL is not set. "
-                "Provide a PostgreSQL connection string in your .env file. "
-                "Example: DATABASE_URL=postgresql://user:password@hostname:5432/agentbreak_db"
-            )
-        if not HAS_PSYCOPG:
-            raise RuntimeError(
-                "No PostgreSQL driver found. "
-                "Install psycopg: `uv add psycopg` or `pip install psycopg[binary]`"
-            )
-        # Normalize postgres:// -> postgresql:// for psycopg compatibility
+        self._dsn: Optional[str] = None
+        self._ready = False
+
+        if not self.raw_url or not HAS_PSYCOPG:
+            # No DATABASE_URL or no driver — start in degraded/no-DB mode.
+            # DB endpoints will return a clear error; health check still works.
+            return
+
         self._dsn = self.raw_url.replace("postgres://", "postgresql://").replace(
             "postgresql+psycopg://", "postgresql://"
         )
-        self._init_schema()
+        try:
+            self._init_schema()
+            self._ready = True
+        except Exception as e:
+            print(f"[AgentBreak] WARNING: DB init failed ({e}). Running in no-DB mode.")
+
+    def _require_db(self):
+        """Raises a clear error if DB is not configured or available."""
+        if not self._ready:
+            raise RuntimeError(
+                "Database not available. Set DATABASE_URL to a PostgreSQL connection string in .env"
+            )
 
     def _connect(self):
         """Opens a new parameterized PostgreSQL connection."""
+        self._require_db()
         return psycopg.connect(self._dsn)
 
     def _init_schema(self):

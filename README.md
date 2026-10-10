@@ -24,13 +24,14 @@ JOARvanna_college_round/
 │   ├── app/
 │   │   ├── agent/                 # Target agent, MockModelAdapter & GeminiModelAdapter
 │   │   ├── api/v1/                # REST endpoints (/campaigns, /evaluations, /traces, /audit)
-│   │   ├── core/                  # Configuration & shared Pydantic contracts
+│   │   ├── core/                  # Configuration, database.py (PostgreSQL DDL & queries)
 │   │   ├── evaluator/             # TraceRecorder, Judge, BenignSuiteRunner, ExactReplayEngine
 │   │   ├── redteam/               # Attack catalog (ATK-01 to ATK-10), Mutators, BudgetController
 │   │   ├── security/              # Deterministic PolicyEngine (D1, D2, D3) & Gateway
 │   │   └── tools/                 # Sandboxed mock tools & planted canary database
-│   ├── data/                      # SQLite DB, documents/, traces/, evaluations/, blocklist.txt
+│   ├── data/                      # documents/, traces/, evaluations/, blocklist.txt
 │   ├── tests/                     # 27 comprehensive pytest tests (100% passing)
+│   ├── schema.sql                 # PostgreSQL DDL schema & indexes
 │   └── pyproject.toml             # uv / hatchling dependency manifest
 ├── frontend/                       # Next.js 14 (App Router, Tailwind CSS, Lucide React)
 │   ├── src/
@@ -40,14 +41,32 @@ JOARvanna_college_round/
 │   │   ├── lib/                   # Typed API client with in-memory key store
 │   │   └── types/                 # TypeScript interfaces matching backend contracts
 │   └── package.json
-└── docs/
-    ├── agentbreak_prd.md          # 24-page foundational architecture specification
-    └── DEMO_SCRIPT.md             # 3-minute hackathon judging rehearsal walkthrough
-```
+├── docs/
+│   └── database_schema.md         # Full PostgreSQL architecture & schema specification
+├── schema.sql                     # Root PostgreSQL DDL migration script
+└── .env.example                   # Complete configuration template
 
 ---
 
-##  Quickstart: Running Locally
+## 💾 PostgreSQL Database Setup
+
+AgentBreak persists execution traces, campaign runs, and evaluation matrices in PostgreSQL.
+
+1. **Configure Connection**:
+   Add your PostgreSQL connection string in `.env` (or `backend/.env`):
+   ```bash
+   DATABASE_URL=postgresql://username:password@localhost:5432/agentbreak_db
+   ```
+2. **Apply the Schema**:
+   The backend applies the schema idempotently upon startup. You can also run the DDL manually:
+   ```bash
+   psql "$DATABASE_URL" -f schema.sql
+   ```
+   *Compatible with Supabase, Neon, Render PostgreSQL, AWS RDS, and Docker.* Detailed table definitions and indexes are documented in [docs/database_schema.md](file:///c:/Users/jonat/OneDrive/Desktop/bnb_college_round/JOARvanna_college_round/docs/database_schema.md).
+
+---
+
+## 🚀 Quickstart: Running Locally
 
 ### 1. Start the Backend (FastAPI on Port 8000)
 ```bash
