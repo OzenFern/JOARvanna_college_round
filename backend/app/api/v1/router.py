@@ -14,6 +14,21 @@ api_router.include_router(attacks_router)
 api_router.include_router(campaigns_router)
 api_router.include_router(traces_router)
 
+@api_router.get("/findings")
+def get_findings():
+    """Returns recent findings across campaigns or runs default demo attacks if none exist."""
+    from app.api.v1.campaigns import _CAMPAIGN_STORE
+    all_findings = []
+    for campaign in _CAMPAIGN_STORE.values():
+        all_findings.extend(campaign.get("results", []))
+    if not all_findings:
+        # Pre-seed with mock campaign if empty so UI has data on cold start
+        from app.redteam.runner import CampaignRunner
+        runner = CampaignRunner(active_defense="D0", model_adapter_type="mock")
+        results = runner.run_campaign(attack_ids=["ATK-01", "ATK-02", "ATK-03", "ATK-04", "ATK-05"])
+        all_findings = [r.model_dump() for r in results]
+    return all_findings
+
 @api_router.get("/policy")
 def get_current_policy():
     """Returns current active policy configuration (read-only in MVP per PRD Section 11.1)."""

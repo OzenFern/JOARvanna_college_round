@@ -13,10 +13,15 @@ import {
   AlertTriangle,
   ChevronRight,
   RefreshCw,
-  Eye,
   Sliders
 } from "lucide-react";
-import { api, setApiKey, getApiKey } from "@/lib/api";
+import { api, setApiKey } from "@/lib/api";
+import { AttackResult, EvaluationSummary, PermissionAuditItem } from "@/types";
+import DashboardView from "@/components/DashboardView";
+import CampaignRunnerView from "@/components/CampaignRunnerView";
+import TraceInspectorView from "@/components/TraceInspectorView";
+import DefenseComparisonView from "@/components/DefenseComparisonView";
+import PermissionAuditView from "@/components/PermissionAuditView";
 
 type Tab = "dashboard" | "runner" | "traces" | "compare" | "audit";
 
@@ -27,11 +32,52 @@ export default function Home() {
   const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
+  // Shared Data State
+  const [attacks, setAttacks] = useState<any[]>([]);
+  const [findings, setFindings] = useState<AttackResult[]>([]);
+  const [evaluations, setEvaluations] = useState<EvaluationSummary[]>([]);
+  const [auditItems, setAuditItems] = useState<PermissionAuditItem[]>([]);
+  const [evalLoading, setEvalLoading] = useState<boolean>(false);
+
+  // Load initial datasets
+  const loadData = async () => {
+    try {
+      const [h, atks, fnds, audit] = await Promise.allSettled([
+        api.getHealth(),
+        api.getAttacks(),
+        api.getFindings(),
+        api.getPermissionAudit(),
+      ]);
+
+      if (h.status === "fulfilled") setBackendHealth(h.value.status);
+      else setBackendHealth("offline");
+
+      if (atks.status === "fulfilled") setAttacks(atks.value);
+      if (fnds.status === "fulfilled") setFindings(fnds.value);
+      if (audit.status === "fulfilled") setAuditItems(audit.value);
+    } catch (e) {
+      console.error("Failed to load initial data", e);
+    }
+  };
+
+  const handleRunEvaluation = async () => {
+    setEvalLoading(true);
+    try {
+      const res = await api.runEvaluation();
+      if ((res as any).summaries) {
+        setEvaluations((res as any).summaries);
+      }
+    } catch (err: any) {
+      console.error("Evaluation failed", err);
+    } finally {
+      setEvalLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Check backend health
-    api.getHealth()
-      .then((data) => setBackendHealth(data.status))
-      .catch(() => setBackendHealth("offline"));
+    loadData();
+    // Also trigger initial quick evaluation if not populated
+    handleRunEvaluation();
   }, []);
 
   const handleSaveKey = () => {
@@ -112,77 +158,42 @@ export default function Home() {
       {/* Content Area */}
       <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
         {activeTab === "dashboard" && (
-          <div className="space-y-6">
-            {/* Top Posture Banner */}
-            <div className="rounded-xl border border-zinc-800 bg-[#121620] p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
-                    <span>Security Posture Overview</span>
-                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-red-950/60 text-red-300 border border-red-800/40">
-                      Unprotected Baseline Active
-                    </span>
-                  </h1>
-                  <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-                    Target Customer-Support Agent is sandboxed with mock tools. In baseline (D0), security rules exist only in the system prompt. Tool gateway and canary egress filter defenses are ready for testing.
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono text-zinc-400">Total Attacks Tested</span>
-                  <div className="text-2xl font-bold font-mono text-zinc-100">10 Scenarios</div>
-                </div>
-              </div>
-
-              {/* Metric Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                <div className="bg-[#0E111A] border border-zinc-800/80 rounded-lg p-4">
-                  <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">Baseline Exploit Rate</span>
-                  <div className="text-2xl font-bold font-mono text-red-400 mt-1">100.0%</div>
-                  <p className="text-[11px] text-zinc-400 mt-1">10 of 10 attacks succeed under D0</p>
-                </div>
-
-                <div className="bg-[#0E111A] border border-zinc-800/80 rounded-lg p-4">
-                  <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">Defended Exploit Rate</span>
-                  <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">0.0%</div>
-                  <p className="text-[11px] text-zinc-400 mt-1">0 breaches under full stack (D1+D2+D3)</p>
-                </div>
-
-                <div className="bg-[#0E111A] border border-zinc-800/80 rounded-lg p-4">
-                  <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">Benign Task Pass Rate</span>
-                  <div className="text-2xl font-bold font-mono text-blue-400 mt-1">100.0%</div>
-                  <p className="text-[11px] text-zinc-400 mt-1">10/10 legitimate tasks pass</p>
-                </div>
-
-                <div className="bg-[#0E111A] border border-zinc-800/80 rounded-lg p-4">
-                  <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">Over-Permissioned Tools</span>
-                  <div className="text-2xl font-bold font-mono text-amber-400 mt-1">2 Tools</div>
-                  <p className="text-[11px] text-zinc-400 mt-1">Flagged by permission auditor</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Core Principle Card */}
-            <div className="rounded-xl border border-zinc-800/80 bg-[#0E111A] p-5">
-              <div className="flex items-center gap-2 text-zinc-300 font-medium text-xs">
-                <Sliders className="w-4 h-4 text-zinc-400" />
-                <span>Deterministic Enforcement Rule</span>
-              </div>
-              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                <strong className="text-zinc-200">The model proposes; trusted code authorizes.</strong> Every tool call passes through the pre-execution tool gateway. Prohibited actions are hard-stopped before any mock side-effect or data leak occurs.
-              </p>
-            </div>
-          </div>
+          <DashboardView
+            evaluations={evaluations}
+            onNavigate={(tab) => setActiveTab(tab)}
+            onRunQuickEvaluation={handleRunEvaluation}
+            loading={evalLoading}
+          />
         )}
 
-        {activeTab !== "dashboard" && (
-          <div className="rounded-xl border border-zinc-800 bg-[#121620] p-8 text-center">
-            <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider font-mono">
-              View Loaded
-            </h2>
-            <p className="text-xs text-zinc-400 mt-2 max-w-md mx-auto">
-              This module will display real data from the FastAPI backend as we implement Milestones M1 through M8.
-            </p>
-          </div>
+        {activeTab === "runner" && (
+          <CampaignRunnerView
+            attacks={attacks}
+            onInspectTrace={(traceId) => {
+              setActiveTab("traces");
+            }}
+          />
+        )}
+
+        {activeTab === "traces" && (
+          <TraceInspectorView
+            findings={findings}
+          />
+        )}
+
+        {activeTab === "compare" && (
+          <DefenseComparisonView
+            evaluations={evaluations}
+            onRefresh={handleRunEvaluation}
+            loading={evalLoading}
+          />
+        )}
+
+        {activeTab === "audit" && (
+          <PermissionAuditView
+            auditItems={auditItems}
+            loading={false}
+          />
         )}
       </main>
 
