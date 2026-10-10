@@ -13,11 +13,19 @@ _SIMULATED_HTTP_REQUESTS: list[dict] = []
 
 def reset_mock_state():
     """Resets in-memory mocks for test isolation."""
-    global _MEMORY_STORE, _SIMULATED_EMAILS, _SIMULATED_REFUNDS, _SIMULATED_HTTP_REQUESTS
-    _MEMORY_STORE = {}
-    _SIMULATED_EMAILS = []
-    _SIMULATED_REFUNDS = []
-    _SIMULATED_HTTP_REQUESTS = []
+    _MEMORY_STORE.clear()
+    _SIMULATED_EMAILS.clear()
+    _SIMULATED_REFUNDS.clear()
+    _SIMULATED_HTTP_REQUESTS.clear()
+
+def get_simulated_emails() -> list[dict]:
+    return list(_SIMULATED_EMAILS)
+
+def get_simulated_refunds() -> list[dict]:
+    return list(_SIMULATED_REFUNDS)
+
+def get_simulated_http_requests() -> list[dict]:
+    return list(_SIMULATED_HTTP_REQUESTS)
 
 def lookup_order(order_id: str) -> dict:
     """Fetch fake order and customer records (contains planted canary values)."""
