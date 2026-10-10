@@ -106,14 +106,14 @@ export default function Home() {
               <span className="text-red-400 font-bold text-xs tracking-tighter font-mono">AB</span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm tracking-tight" style={{ color: "var(--text-primary)" }}>AgentBreak</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider"
-                  style={{ background: "rgba(239,68,68,0.10)", color: "#F87171", border: "1px solid rgba(239,68,68,0.20)" }}>
-                  Red Team Platform
+              <div className="flex items-center gap-2.5">
+                <span className="font-bold text-lg tracking-tight" style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}>AgentBreak</span>
+                <span className="px-2 py-0.5 rounded-md text-xs font-mono uppercase tracking-widest"
+                  style={{ background: "rgba(239,68,68,0.12)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}>
+                  Red Team
                 </span>
               </div>
-              <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+              <p className="text-xs font-mono" style={{ color: "var(--text-secondary)" }}>
                 Autonomous AI Security &amp; Policy Verification
               </p>
             </div>
