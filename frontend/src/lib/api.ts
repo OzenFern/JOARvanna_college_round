@@ -74,6 +74,14 @@ export const api = {
     });
   },
 
+  async getDbStatus() {
+    return request<{ engine: string; ready: boolean; configured: boolean }>("/db/status");
+  },
+
+  async listCampaigns() {
+    return request<any[]>("/campaigns");
+  },
+
   async startCampaign(payload: any) {
     return request<any>("/campaigns", {
       method: "POST",

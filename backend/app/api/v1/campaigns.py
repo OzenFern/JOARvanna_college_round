@@ -69,6 +69,18 @@ def start_campaign(
 
     return data
 
+@router.get("")
+def list_campaigns():
+    """Lists all stored campaigns from PostgreSQL or memory store."""
+    from app.core.database import db
+    try:
+        db_campaigns = db.list_campaigns()
+        if db_campaigns:
+            return db_campaigns
+    except Exception:
+        pass
+    return list(_CAMPAIGN_STORE.values())
+
 @router.get("/{campaign_id}")
 def get_campaign(campaign_id: str):
     from app.core.database import db

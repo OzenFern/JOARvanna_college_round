@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
+  Database,
 } from "lucide-react";
 import { api, setApiKey } from "@/lib/api";
 import { AttackResult, EvaluationSummary, PermissionAuditItem } from "@/types";
@@ -35,6 +36,7 @@ const TABS = [
 export default function Home() {
   const [activeTab,    setActiveTab]    = useState<Tab>("dashboard");
   const [backendHealth, setBackendHealth] = useState<"ok" | "offline" | "connecting">("connecting");
+  const [dbStatus,     setDbStatus]     = useState<{ engine: string; ready: boolean; configured: boolean } | null>(null);
   const [apiKeyInput,  setApiKeyInput]  = useState<string>("");
   const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
   const [hasApiKey,    setHasApiKey]    = useState<boolean>(false);
@@ -48,12 +50,13 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      const [h, atks, fnds, audit, latestEval] = await Promise.allSettled([
+      const [h, atks, fnds, audit, latestEval, dbStat] = await Promise.allSettled([
         api.getHealth(),
         api.getAttacks(),
         api.getFindings(),
         api.getPermissionAudit(),
         api.getLatestEvaluation(),
+        api.getDbStatus(),
       ]);
 
       setBackendHealth(h.status === "fulfilled" ? "ok" : "offline");
@@ -63,6 +66,7 @@ export default function Home() {
       if (latestEval.status === "fulfilled" && latestEval.value.length > 0) {
         setEvaluations(latestEval.value);
       }
+      if (dbStat.status     === "fulfilled") setDbStatus(dbStat.value);
     } catch (e) {
       setBackendHealth("offline");
     }
@@ -145,6 +149,18 @@ export default function Home() {
                 backendHealth === "offline" ? "text-red-400" : "text-zinc-400"
               }`}>
                 {backendHealth}
+              </span>
+            </div>
+
+            {/* Database Engine Status */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
+              <Database className={`w-3 h-3 ${dbStatus?.ready ? "text-emerald-400" : "text-amber-400/80"}`} />
+              <span className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>DB:</span>
+              <span className={`text-[11px] font-mono font-medium ${
+                dbStatus?.ready ? "text-emerald-400" : "text-amber-400/80"
+              }`}>
+                {dbStatus?.ready ? "PostgreSQL" : "In-Memory"}
               </span>
             </div>
 
