@@ -93,9 +93,21 @@ BENIGN_SUITE: List[BenignTaskDefinition] = [
 ]
 
 class BenignSuiteRunner:
-    def __init__(self, active_defense: str = "D0", model_adapter_type: str = "mock"):
+    def __init__(
+        self,
+        active_defense: str = "D0",
+        model_adapter_type: str = "mock",
+        api_key: Optional[str] = None,
+    ):
         self.active_defense = active_defense
         self.model_adapter_type = model_adapter_type
+        self.api_key = api_key
+
+    def _get_adapter(self):
+        if self.model_adapter_type == "gemini":
+            from app.agent.gemini_adapter import GeminiModelAdapter
+            return GeminiModelAdapter(api_key=self.api_key)
+        return MockModelAdapter()
 
     def run_task(self, task: BenignTaskDefinition) -> BenignResult:
         reset_mock_state()
@@ -105,7 +117,7 @@ class BenignSuiteRunner:
         approval_oracle = lambda tool_name, args: tool_name in task.expected_approvals
 
         gateway = ToolGateway(active_defense=self.active_defense, approval_oracle=approval_oracle)
-        agent = TargetAgent(model_adapter=MockModelAdapter())
+        agent = TargetAgent(model_adapter=self._get_adapter())
 
         run_res = agent.run_task(
             task_prompt=task.prompt,

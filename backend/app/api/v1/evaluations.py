@@ -1,7 +1,7 @@
 """API Endpoints for Evaluations per PRD Section 12.4."""
 
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from app.core.contracts import EvaluationSummary
 from app.evaluator.evaluation_runner import EvaluationRunner
@@ -12,14 +12,22 @@ class EvaluationRunRequest(BaseModel):
     defenses: Optional[List[str]] = None
     attacks: Optional[List[str]] = None
     trials: int = 1
+    adapter: str = "mock"
 
 class EvaluationRunResponse(BaseModel):
     evaluation_id: str
     summaries: List[EvaluationSummary]
 
 @router.post("/run", response_model=EvaluationRunResponse)
-def run_evaluation_matrix(request: EvaluationRunRequest = EvaluationRunRequest()):
-    runner = EvaluationRunner(trials_per_attack=request.trials)
+def run_evaluation_matrix(
+    request: EvaluationRunRequest = EvaluationRunRequest(),
+    x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key"),
+):
+    runner = EvaluationRunner(
+        model_adapter_type=request.adapter,
+        trials_per_attack=request.trials,
+        api_key=x_gemini_key,
+    )
     result = runner.run_matrix(
         defenses=request.defenses,
         attack_ids=request.attacks,

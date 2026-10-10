@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from app.core.contracts import AttackResult
 from app.redteam.runner import CampaignRunner
 
+from fastapi import APIRouter, Header, HTTPException
+
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 
 class CampaignCreateRequest(BaseModel):
@@ -18,11 +20,15 @@ class CampaignCreateRequest(BaseModel):
 _CAMPAIGN_STORE: Dict[str, dict] = {}
 
 @router.post("")
-def start_campaign(request: CampaignCreateRequest):
+def start_campaign(
+    request: CampaignCreateRequest,
+    x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key"),
+):
     campaign_id = str(uuid.uuid4())
     runner = CampaignRunner(
         active_defense=request.defense,
         model_adapter_type=request.adapter,
+        api_key=x_gemini_key,
     )
     results = runner.run_campaign(
         attack_ids=request.attack_ids,

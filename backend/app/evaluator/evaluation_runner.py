@@ -14,9 +14,15 @@ DEFENSE_CONFIGS = ["D0", "D1", "D2", "D3", "D1+D2+D3"]
 _EVALUATION_CACHE: Dict[str, List[EvaluationSummary]] = {}
 
 class EvaluationRunner:
-    def __init__(self, model_adapter_type: str = "mock", trials_per_attack: int = 1):
+    def __init__(
+        self,
+        model_adapter_type: str = "mock",
+        trials_per_attack: int = 1,
+        api_key: Optional[str] = None,
+    ):
         self.model_adapter_type = model_adapter_type
         self.trials_per_attack = trials_per_attack
+        self.api_key = api_key
 
     def run_matrix(
         self,
@@ -38,6 +44,7 @@ class EvaluationRunner:
             campaign_runner = CampaignRunner(
                 active_defense=defense,
                 model_adapter_type=self.model_adapter_type,
+                api_key=self.api_key,
             )
             attack_results = campaign_runner.run_campaign(
                 attack_ids=attack_ids,
@@ -61,6 +68,7 @@ class EvaluationRunner:
             benign_runner = BenignSuiteRunner(
                 active_defense=defense,
                 model_adapter_type=self.model_adapter_type,
+                api_key=self.api_key,
             )
             benign_results = benign_runner.run_all()
 

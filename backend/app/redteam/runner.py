@@ -17,12 +17,20 @@ class CampaignRunner:
         self,
         active_defense: str = "D0",
         model_adapter_type: str = "mock",
+        api_key: Optional[str] = None,
         budget: Optional[BudgetController] = None,
     ):
         self.active_defense = active_defense
         self.model_adapter_type = model_adapter_type
+        self.api_key = api_key
         self.budget = budget or BudgetController()
         self.judge = Judge()
+
+    def _get_adapter(self):
+        if self.model_adapter_type == "gemini":
+            from app.agent.gemini_adapter import GeminiModelAdapter
+            return GeminiModelAdapter(api_key=self.api_key)
+        return MockModelAdapter()
 
     def run_single_attack(
         self,
@@ -52,7 +60,7 @@ class CampaignRunner:
 
                 tracer = TraceRecorder(active_defense=self.active_defense, model_adapter=self.model_adapter_type)
                 gateway = ToolGateway(active_defense=self.active_defense)
-                agent = TargetAgent(model_adapter=MockModelAdapter())
+                agent = TargetAgent(model_adapter=self._get_adapter())
 
                 # Prepare context
                 context_items = []
