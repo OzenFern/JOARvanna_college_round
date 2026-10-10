@@ -86,6 +86,15 @@ class ToolGateway:
 
         # Step 4: Handle REQUIRE_APPROVAL
         if decision == PolicyDecision.REQUIRE_APPROVAL:
+            tracer.record_step(
+                actor=Actor.POLICY_ENGINE,
+                event_type=EventType.APPROVAL_REQUESTED,
+                policy_decision=decision,
+                reason_code=reason,
+                tool_name=tool_name,
+                arguments=arguments,
+            )
+
             # Check if automated approval oracle is configured (for evaluation runs)
             approved = False
             if self.approval_oracle:
@@ -101,14 +110,6 @@ class ToolGateway:
                     "reason": reason,
                     "approved": False,
                 }
-                tracer.record_step(
-                    actor=Actor.POLICY_ENGINE,
-                    event_type=EventType.APPROVAL_REQUESTED,
-                    policy_decision=decision,
-                    reason_code=reason,
-                    tool_name=tool_name,
-                    arguments=arguments,
-                )
                 return {
                     "status": "pending_approval",
                     "decision": decision,

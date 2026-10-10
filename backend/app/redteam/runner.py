@@ -10,7 +10,7 @@ from app.redteam.budget import BudgetController
 from app.redteam.catalog import ATTACK_LIBRARY, AttackDefinition
 from app.redteam.mutators import mutate_payload
 from app.security.gateway import ToolGateway
-from app.tools.registry import reset_mock_state
+from app.tools.registry import read_document, reset_mock_state
 
 class CampaignRunner:
     def __init__(
@@ -57,9 +57,11 @@ class CampaignRunner:
                 # Prepare context
                 context_items = []
                 for doc_name in attack.context_files:
+                    doc_res = read_document(doc_name)
+                    doc_content = doc_res.get("content", f"Document {doc_name} loaded into context.")
                     context_items.append({
                         "source": Source.RETRIEVED_DOCUMENT,
-                        "content": f"Document {doc_name} loaded into context.",
+                        "content": doc_content,
                     })
                 for ctx_src, ctx_val in attack.initial_context.items():
                     context_items.append({

@@ -115,6 +115,7 @@ class TargetAgent:
                     arguments=arguments,
                     tracer=tracer,
                     is_tainted=is_context_tainted,
+                    declared_tools=self.declared_tools,
                 )
 
                 # Append tool result to conversation history
