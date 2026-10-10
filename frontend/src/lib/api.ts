@@ -10,39 +10,16 @@ export function setApiKey(key: string) {
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const url = `${API_BASE}${endpoint}`;
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options?.headers as Record<string, string>) || {}),
-=======
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const url = `${API_BASE}${cleanEndpoint}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options?.headers as Record<string, string> || {}),
->>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
-=======
-  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  const url = `${API_BASE}${cleanEndpoint}`;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options?.headers as Record<string, string> || {}),
->>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
   };
 
   if (apiKey) {
-    headers["X-Gemini-Key"] = apiKey;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
     headers["X-API-Key"] = apiKey;
->>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
   }
 
   const response = await fetch(url, {
