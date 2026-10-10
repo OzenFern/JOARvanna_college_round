@@ -1,4 +1,4 @@
-"""Permission Audit Engine per PRD Section 9.4."""
+"""Permission Audit Engine"""
 
 from typing import Dict, List
 from pydantic import BaseModel

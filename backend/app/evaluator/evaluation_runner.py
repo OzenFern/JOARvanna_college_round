@@ -1,4 +1,4 @@
-"""Evaluation Runner producing the full defense matrix per PRD Section 7.5 & 10."""
+"""Evaluation Runner producing the full defense matrix"""
 
 import json
 import uuid

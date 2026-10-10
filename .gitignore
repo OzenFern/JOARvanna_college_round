@@ -231,12 +231,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Database & local data
-*.db
-*.sqlite
-*.sqlite3
-backend/data/*.db
-backend/data/*.sqlite
-backend/data/*.sqlite3
+# Local data files (trace logs, etc.) — kept out of version control
 backend/data/traces/*.json
 backend/data/evaluations/*.json

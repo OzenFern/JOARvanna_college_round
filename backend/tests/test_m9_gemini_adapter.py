@@ -49,7 +49,7 @@ def test_gemini_adapter_end_to_end_agent_run():
     assert len(tracer.steps) >= 3
 
 def test_api_key_not_leaked_in_trace():
-    """Verify PRD Rule 14.1.4: API key is never logged, stored, or echoed into trace steps."""
+    """Verify API key is never logged, stored, or echoed into trace steps."""
     secret_key = "AIzaSySecretFakeKey12345"
     adapter = GeminiModelAdapter(api_key=secret_key)
     agent = TargetAgent(model_adapter=adapter)

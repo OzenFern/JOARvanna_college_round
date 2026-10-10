@@ -1,4 +1,4 @@
-"""Aggregation of all API v1 routers per PRD Section 12.4."""
+"""Aggregation of all API v1 routers"""
 
 from fastapi import APIRouter
 from app.api.v1.attacks import router as attacks_router
@@ -31,7 +31,7 @@ def get_findings():
 
 @api_router.get("/policy")
 def get_current_policy():
-    """Returns current active policy configuration (read-only in MVP per PRD Section 11.1)."""
+    """Returns current active policy configuration (read-only in MVP.1)."""
     return {
         "policy_id": "pol_default_v1",
         "name": "Standard Customer Support Guardrail Policy",

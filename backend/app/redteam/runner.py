@@ -1,4 +1,4 @@
-"""Red Team Campaign Runner per PRD Section 8 & Section 10."""
+"""Red Team Campaign Runner Section 10."""
 
 from typing import Dict, List, Optional
 from app.agent.mock_adapter import MockModelAdapter
