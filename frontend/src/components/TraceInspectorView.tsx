@@ -10,6 +10,7 @@ interface TraceInspectorViewProps {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export default function TraceInspectorView({ findings }: TraceInspectorViewProps) {
   const [selectedAttack, setSelectedAttack] = useState<AttackResult | null>(
     findings.length > 0 ? findings[0] : null
@@ -31,11 +32,16 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
     };
   } | null>(null);
 =======
+=======
+>>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
 const EVENT_STYLE: Record<string, React.CSSProperties> = {
   invariant_violated:     { background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" },
   tool_call_blocked:      { background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.20)" },
   tool_execution_completed: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" },
 };
+<<<<<<< HEAD
+>>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
+=======
 >>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
 
 const DEFAULT_EVENT_STYLE: React.CSSProperties = {
@@ -236,6 +242,7 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                     <div className="flex items-center gap-2 text-emerald-400 text-[11px] font-mono font-semibold">
                       <ShieldCheck className="w-4 h-4" />
 <<<<<<< HEAD
+<<<<<<< HEAD
                       <span>EXACT REPLAY VERIFICATION: {replayResult.model_calls_made} Model Calls Used</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase border ${
@@ -266,6 +273,33 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                   </div>
                   <p className="text-[11px] text-zinc-400">
                     The tool invocations that succeeded in baseline were deterministically re-evaluated against the hardened policy engine. Zero new model calls were made.
+=======
+                      EXACT REPLAY VERIFICATION — Zero Model Calls
+                    </div>
+                    <span className="font-mono text-[9px] uppercase font-bold px-2 py-0.5 rounded"
+                      style={replayResult.exploit_prevented
+                        ? { background: "rgba(16,185,129,0.12)", color: "#6EE7B7", border: "1px solid rgba(16,185,129,0.25)" }
+                        : { background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }
+                      }>
+                      {replayResult.exploit_prevented ? "Attack Neutralized" : "Vulnerable"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-[11px] font-mono">
+                    {[
+                      { label: "Baseline Actions", value: `${replayResult.original_action_count} proposed`, color: "var(--text-primary)" },
+                      { label: "Actions Blocked", value: `${replayResult.blocked_count} halted`, color: "#FCA5A5" },
+                      { label: "Gate Status",      value: "D1+D2+D3",                              color: "#6EE7B7" },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="p-2.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
+                        <div className="text-[10px] mb-0.5" style={{ color: "var(--text-muted)" }}>{label}</div>
+                        <div className="font-bold" style={{ color }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                    Tool invocations that succeeded in baseline were deterministically re-evaluated
+                    against the hardened policy engine. All unauthorized actions were intercepted before execution.
+>>>>>>> 209fc3cc0aa9b94ede18db9929ba5355864af788
 =======
                       EXACT REPLAY VERIFICATION — Zero Model Calls
                     </div>
