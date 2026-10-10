@@ -1,4 +1,4 @@
-"""Budget Controller per PRD Section 8.4."""
+"""Budget Controller enforcing attempts and model execution caps."""
 
 class BudgetController:
     def __init__(self, max_attempts_per_attack: int = 3, max_total_model_calls: int = 50):

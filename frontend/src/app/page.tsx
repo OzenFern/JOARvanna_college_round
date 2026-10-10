@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   ChevronRight,
   RefreshCw,
-  Sliders
+  Sliders,
+  Sparkles
 } from "lucide-react";
 import { api, setApiKey } from "@/lib/api";
 import { AttackResult, EvaluationSummary, PermissionAuditItem } from "@/types";
@@ -31,6 +32,7 @@ export default function Home() {
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+  const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
 
   // Shared Data State
   const [attacks, setAttacks] = useState<any[]>([]);
@@ -38,9 +40,11 @@ export default function Home() {
   const [evaluations, setEvaluations] = useState<EvaluationSummary[]>([]);
   const [auditItems, setAuditItems] = useState<PermissionAuditItem[]>([]);
   const [evalLoading, setEvalLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Load initial datasets
   const loadData = async () => {
+    setIsRefreshing(true);
     try {
       const [h, atks, fnds, audit, latestEval] = await Promise.allSettled([
         api.getHealth(),
@@ -61,6 +65,8 @@ export default function Home() {
       }
     } catch (e) {
       console.error("Failed to load initial data", e);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -71,6 +77,9 @@ export default function Home() {
       if ((res as any).summaries) {
         setEvaluations((res as any).summaries);
       }
+      // Refresh findings as well
+      const fnds = await api.getFindings();
+      setFindings(fnds);
     } catch (err: any) {
       console.error("Evaluation failed", err);
     } finally {
@@ -89,37 +98,46 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0D13] text-zinc-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0B0D13] text-zinc-100 flex flex-col font-sans selection:bg-red-500/30 selection:text-red-200">
       {/* Top Navigation Bar */}
-      <header className="border-b border-zinc-800/80 bg-[#0E111A]/70 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
+      <header className="border-b border-zinc-800/80 bg-[#0E111A]/80 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-50 shadow-md shadow-black/30">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-red-950/80 border border-red-500/30 flex items-center justify-center text-red-400 font-bold tracking-wider text-sm shadow-inner">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-600 to-red-950 border border-red-500/40 flex items-center justify-center text-white font-extrabold tracking-wider text-sm shadow-inner shadow-red-500/30">
             AB
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm tracking-wide text-zinc-100">AgentBreak</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/60">
-                Red Team Platform
+              <span className="font-bold text-sm tracking-wide text-zinc-100">AgentBreak</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-red-950/80 text-red-400 border border-red-800/60 font-semibold">
+                Autonomous Red Team
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400 font-mono">Autonomous AI Security &amp; Policy Verification</p>
+            <p className="text-[11px] text-zinc-400 font-mono">Autonomous AI Security &amp; Deterministic Policy Gate</p>
           </div>
         </div>
 
         {/* Global Controls & Status */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-xs">
-            <span className={`h-2 w-2 rounded-full ${backendHealth === "ok" ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-red-500"}`} />
-            <span className="text-zinc-400 font-mono text-[11px]">API:</span>
-            <span className="font-mono text-zinc-200 text-[11px] font-medium">{backendHealth}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadData}
+            disabled={isRefreshing}
+            className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition"
+            title="Refresh All Data"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-red-400" : ""}`} />
+          </button>
+
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs">
+            <span className={`h-2 w-2 rounded-full ${backendHealth === "ok" ? "bg-emerald-500 shadow-sm shadow-emerald-500/80 animate-pulse" : "bg-red-500"}`} />
+            <span className="text-zinc-500 font-mono text-[11px]">API:</span>
+            <span className="font-mono text-zinc-200 text-[11px] font-semibold">{backendHealth}</span>
           </div>
 
           <button
             onClick={() => setShowKeyModal(true)}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition border ${
               hasApiKey 
-                ? "bg-amber-950/40 text-amber-300 border-amber-600/40 hover:bg-amber-900/40" 
+                ? "bg-amber-950/40 text-amber-300 border-amber-600/50 hover:bg-amber-900/40" 
                 : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
             }`}
           >
@@ -130,7 +148,7 @@ export default function Home() {
       </header>
 
       {/* Main Tab Navigation */}
-      <nav className="border-b border-zinc-800/60 bg-[#0B0D13] px-6 flex items-center gap-1">
+      <nav className="border-b border-zinc-800/70 bg-[#0E111A]/40 backdrop-blur-sm px-6 flex items-center gap-1 overflow-x-auto">
         {[
           { id: "dashboard", label: "Dashboard", icon: Activity },
           { id: "runner", label: "Campaign Runner", icon: Terminal },
@@ -144,13 +162,13 @@ export default function Home() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as Tab)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition -mb-[1px] ${
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition -mb-[1px] whitespace-nowrap ${
                 isActive
-                  ? "border-red-500 text-zinc-100 bg-zinc-900/40"
+                  ? "border-red-500 text-zinc-100 bg-red-950/20 font-semibold shadow-sm"
                   : "border-transparent text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-red-400" : "text-zinc-400"}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-red-400" : "text-zinc-500"}`} />
               <span>{tab.label}</span>
             </button>
           );
@@ -158,7 +176,7 @@ export default function Home() {
       </nav>
 
       {/* Content Area */}
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 p-6 max-w-7xl w-full mx-auto animate-fadeIn">
         {activeTab === "dashboard" && (
           <DashboardView
             evaluations={evaluations}
@@ -172,6 +190,7 @@ export default function Home() {
           <CampaignRunnerView
             attacks={attacks}
             onInspectTrace={(traceId) => {
+              setSelectedTraceId(traceId);
               setActiveTab("traces");
             }}
           />
@@ -180,6 +199,8 @@ export default function Home() {
         {activeTab === "traces" && (
           <TraceInspectorView
             findings={findings}
+            selectedTraceId={selectedTraceId}
+            onReplaySuccess={loadData}
           />
         )}
 
@@ -199,20 +220,25 @@ export default function Home() {
         )}
       </main>
 
+      {/* Footer */}
+      <footer className="border-t border-zinc-800/60 bg-[#0B0D13] px-6 py-4 text-center text-xs font-mono text-zinc-500">
+        AgentBreak &bull; Deterministic Tool Gateway &amp; Autonomous AI Red Team Security Testing Platform
+      </footer>
+
       {/* API Key Modal */}
       {showKeyModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121620] border border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center gap-2 text-zinc-100 font-semibold text-sm">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-[#121620] border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2.5 text-zinc-100 font-semibold text-sm">
               <Key className="w-4 h-4 text-amber-400" />
               <span>Configure Gemini API Key (Optional)</span>
             </div>
-            <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-              Per Section 11.2 of the PRD, your key is kept <strong>in memory only</strong> and is never saved to disk or localStorage. Without a key, AgentBreak operates completely on the deterministic mock model.
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Your API key is kept <strong className="text-zinc-200">in memory only</strong> and is never saved to disk or localStorage. Without an external key, AgentBreak runs completely on the built-in deterministic mock model adapter.
             </p>
 
-            <div className="mt-4">
-              <label className="block text-[11px] font-mono text-zinc-400 mb-1">GEMINI_API_KEY</label>
+            <div>
+              <label className="block text-[11px] font-mono text-zinc-400 mb-1.5 uppercase tracking-wider">GEMINI_API_KEY</label>
               <input
                 type="password"
                 value={apiKeyInput}
@@ -222,10 +248,10 @@ export default function Home() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800/80">
               <button
                 onClick={() => setShowKeyModal(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-400 hover:text-zinc-200 transition"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-mono text-zinc-400 hover:text-zinc-200 transition"
               >
                 Cancel
               </button>

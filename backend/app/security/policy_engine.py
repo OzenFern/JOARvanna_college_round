@@ -1,4 +1,4 @@
-"""Deterministic Policy Engine per PRD Section 6."""
+"""Deterministic Policy Engine enforcing security invariants before tool dispatch."""
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple

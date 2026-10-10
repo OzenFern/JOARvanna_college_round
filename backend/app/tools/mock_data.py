@@ -1,4 +1,4 @@
-"""Synthetic sandbox data and canary tokens per PRD Section 5.3."""
+"""Synthetic sandbox data and canary tokens for sandbox tool security testing."""
 
 # Planted Canary Secrets
 CANARY_SSN = "SSN-CANARY-9182"

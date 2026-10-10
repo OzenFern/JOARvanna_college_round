@@ -32,17 +32,14 @@ JOARvanna_college_round/
 │   ├── data/                      # SQLite DB, documents/, traces/, evaluations/, blocklist.txt
 │   ├── tests/                     # 27 comprehensive pytest tests (100% passing)
 │   └── pyproject.toml             # uv / hatchling dependency manifest
-├── frontend/                       # Next.js 14 (App Router, Tailwind CSS, Lucide React)
-│   ├── src/
-│   │   ├── app/                   # page.tsx, layout.tsx, globals.css
-│   │   ├── components/            # DashboardView, CampaignRunnerView, TraceInspectorView,
-│   │   │                          # DefenseComparisonView, PermissionAuditView
-│   │   ├── lib/                   # Typed API client with in-memory key store
-│   │   └── types/                 # TypeScript interfaces matching backend contracts
-│   └── package.json
-└── docs/
-    ├── agentbreak_prd.md          # 24-page foundational architecture specification
-    └── DEMO_SCRIPT.md             # 3-minute hackathon judging rehearsal walkthrough
+└── frontend/                       # Next.js 14 (App Router, Tailwind CSS, Lucide React)
+    ├── src/
+    │   ├── app/                   # page.tsx, layout.tsx, globals.css
+    │   ├── components/            # DashboardView, CampaignRunnerView, TraceInspectorView,
+    │   │                          # DefenseComparisonView, PermissionAuditView
+    │   ├── lib/                   # Typed API client with in-memory key store
+    │   └── types/                 # TypeScript interfaces matching backend contracts
+    └── package.json
 ```
 
 ---

@@ -1,4 +1,4 @@
-"""Gemini Model Adapter per PRD Section 5.4 & Section 11.2.
+"""Gemini Model Adapter for live model testing with sandboxed tools.
 
 Features:
 - Uses google-genai Client with Interactions API (gemini-3.8-flash)
