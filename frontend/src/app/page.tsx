@@ -15,8 +15,15 @@ import {
   RotateCcw,
   Sparkles,
   Database,
+  LogIn,
+  LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
+import Link from "next/link";
 import { api, setApiKey } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSupabaseConfigured as supabaseConfigured } from "@/lib/supabase";
 import { AttackResult, EvaluationSummary, PermissionAuditItem } from "@/types";
 import DashboardView from "@/components/DashboardView";
 import CampaignRunnerView from "@/components/CampaignRunnerView";
@@ -42,6 +49,30 @@ export default function Home() {
   const [apiKeyInput,   setApiKeyInput]   = useState<string>("");
   const [showKeyModal,  setShowKeyModal]  = useState<boolean>(false);
   const [hasApiKey,     setHasApiKey]     = useState<boolean>(false);
+  const [theme,         setTheme]         = useState<"light" | "dark">("light");
+
+  // Load and apply theme from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("agentbreak_theme") as "light" | "dark" | null;
+    const initialTheme = saved || "light";
+    setTheme(initialTheme);
+    if (initialTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    localStorage.setItem("agentbreak_theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   // Shared data state
   const [attacks,     setAttacks]     = useState<any[]>([]);
@@ -157,11 +188,24 @@ export default function Home() {
               <span>{hasApiKey ? "Gemini Active" : "Set Key"}</span>
             </button>
 
+            {/* Sun / Moon Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-white dark:bg-[#1a1e2b] border border-[#e9e8e4] dark:border-[#272d3f] text-[#5a5d6b] dark:text-[#9ea7bd] hover:bg-[#f6f6f4] dark:hover:bg-[#232838] transition"
+            >
+              {theme === "light" ? (
+                <Moon className="w-3.5 h-3.5" />
+              ) : (
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+              )}
+            </button>
+
             {/* Refresh */}
             <button
               onClick={loadData}
               title="Refresh data"
-              className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[#e9e8e4] text-[#5a5d6b] hover:bg-[#f6f6f4] transition"
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-white dark:bg-[#1a1e2b] border border-[#e9e8e4] dark:border-[#272d3f] text-[#5a5d6b] dark:text-[#9ea7bd] hover:bg-[#f6f6f4] dark:hover:bg-[#232838] transition"
             >
               <RefreshCw className="w-3 h-3" />
             </button>
