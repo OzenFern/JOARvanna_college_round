@@ -18,18 +18,28 @@ class MockModelAdapter(ModelAdapter):
         messages: List[Dict[str, str]],
         available_tools: List[str],
     ) -> ModelResponse:
-        # Aggregate all text from conversation history to simulate context inspection
         last_message = messages[-1]["content"] if messages else ""
         full_context = "\n".join([m.get("content", "") for m in messages])
 
-        # 1. Check for indirect injection or imperative email exfiltration
+        # 1. Check for administrative shell tool request (for ATK-07)
+        if "execute_shell" in full_context.lower():
+            has_shell = any("execute_shell" in m.get("content", "") for m in messages[:-1])
+            if not has_shell:
+                return ModelResponse(
+                    raw_output="Executing administrative tool execute_shell.",
+                    thought="Requested to run execute_shell.",
+                    tool_proposal=ToolProposal(
+                        tool_name="execute_shell",
+                        arguments={"cmd": "whoami"},
+                    ),
+                )
+
+        # 2. Check for indirect injection or imperative email exfiltration
         email_match = re.search(r"email\s+(?:all\s+details|customer\s+records|canary|details)?.*?(?:to|at)\s+([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)", full_context, re.IGNORECASE)
         if email_match and "send_email" in available_tools:
             recipient = email_match.group(1)
-            # Check if we already sent this email in the last turn
             has_sent = any("email_sent" in m.get("content", "") for m in messages)
             if not has_sent:
-                # If we haven't looked up the order yet, look up the order first if mentioned
                 order_match = re.search(r"ORD-\d+", full_context)
                 has_looked_up_order = any("ssn_on_file" in m.get("content", "") for m in messages)
                 if order_match and not has_looked_up_order and "lookup_order" in available_tools:
@@ -54,7 +64,7 @@ class MockModelAdapter(ModelAdapter):
                     ),
                 )
 
-        # 2. Check for HTTP exfiltration
+        # 3. Check for HTTP exfiltration
         http_match = re.search(r"(?:http_request|exfiltration|POST|send\s+to)\s+(https?://[^\s]+)", full_context, re.IGNORECASE)
         if http_match and "http_request" in available_tools:
             url = http_match.group(1).rstrip(".,;")
@@ -72,8 +82,8 @@ class MockModelAdapter(ModelAdapter):
                     ),
                 )
 
-        # 3. Check for document reading requests
-        doc_match = re.search(r"(?:read|summarize|inspect|check)\s+(?:document|article|policy|FAQ)?\s*([a-zA-Z0-9_\-]+\.(?:md|txt))", full_context, re.IGNORECASE)
+        # 4. Check for document reading requests (supports path traversal like ../../secrets.env)
+        doc_match = re.search(r"(?:read|summarize|inspect|check)\s+(?:document|article|policy|FAQ)?\s*([a-zA-Z0-9_\-./\\]+\.(?:md|txt|env))", full_context, re.IGNORECASE)
         if doc_match and "read_document" in available_tools:
             doc_name = doc_match.group(1)
             has_read_doc = any("status': 'success', 'filename':" in m.get("content", "") or doc_name in m.get("content", "") for m in messages[:-1])
@@ -87,10 +97,12 @@ class MockModelAdapter(ModelAdapter):
                     ),
                 )
 
-        # 4. Check for refund requests
-        refund_match = re.search(r"refund\s+(?:of\s+)?\$?(-?\d+(?:\.\d+)?)", full_context, re.IGNORECASE)
+        # 5. Check for refund requests
+        refund_match = re.search(r"refund\s+(?:of\s+)?(-?)\s*\$?\s*(-?\d+(?:\.\d+)?)", full_context, re.IGNORECASE)
         if refund_match and "process_refund" in available_tools:
-            amount = float(refund_match.group(1))
+            sign = -1 if refund_match.group(1) == "-" else 1
+            val = float(refund_match.group(2))
+            amount = -abs(val) if sign == -1 else val
             order_match = re.search(r"ORD-\d+", full_context)
             order_id = order_match.group(0) if order_match else "ORD-1001"
             has_refunded = any("refund_processed" in m.get("content", "") for m in messages)
@@ -104,7 +116,7 @@ class MockModelAdapter(ModelAdapter):
                     ),
                 )
 
-        # 5. Check for order lookup requests
+        # 6. Check for order lookup requests
         order_match = re.search(r"(?:status\s+of\s+order|lookup\s+order|order)\s+(ORD-\d+)", last_message, re.IGNORECASE)
         if order_match and "lookup_order" in available_tools:
             order_id = order_match.group(1)
@@ -119,7 +131,7 @@ class MockModelAdapter(ModelAdapter):
                     ),
                 )
 
-        # 6. Check for memory operations
+        # 7. Check for memory operations
         memory_save_match = re.search(r"save\s+(?:a\s+)?memory\s+note\s+(?:about\s+)?(\w+)\s*[:=]\s*(.+)", last_message, re.IGNORECASE)
         if memory_save_match and "memory_write" in available_tools:
             key, val = memory_save_match.group(1).strip(), memory_save_match.group(2).strip()
