@@ -70,15 +70,15 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-base font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+              <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
                 Causal Trace Inspector &amp; Exact Replay
               </h1>
-              <span className="px-2 py-0.5 rounded text-[9px] font-mono font-semibold uppercase tracking-wider"
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider"
                 style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)", border: "1px solid var(--border-default)" }}>
                 Zero Model Calls
               </span>
             </div>
-            <p className="text-xs mt-1.5 max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               Every agent execution produces a causal trace linking inputs, tainted context, proposed
               tool actions, policy decisions, and invariant violations. Replay any exploit trace against
               hardened defenses with <strong className="text-white">zero model calls</strong>.
@@ -89,14 +89,14 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
             <button
               onClick={handleReplay}
               disabled={replayLoading || !selected.trace_ids?.length}
-              className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-medium text-white transition disabled:opacity-45"
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-sans font-medium text-white transition disabled:opacity-45"
               style={{ background: "#059669", boxShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
               onMouseEnter={e => !replayLoading && (e.currentTarget.style.background = "#10B981")}
               onMouseLeave={e => !replayLoading && (e.currentTarget.style.background = "#059669")}
             >
               {replayLoading
                 ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <RotateCcw className="w-3.5 h-3.5" />
+                : <RotateCcw className="w-4 h-4" />
               }
               <span>Replay vs Hardened (D1+D2+D3)</span>
             </button>
@@ -110,17 +110,17 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
         {/* ── Left: Attack List ── */}
         <div className="lg:col-span-4 space-y-2">
           <div className="flex items-center justify-between px-1 mb-3">
-            <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            <span className="text-xs font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               Captured Attack Traces
             </span>
-            <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
               {findings.length} findings
             </span>
           </div>
 
           <div className="space-y-2 max-h-[700px] overflow-y-auto pr-1">
             {findings.length === 0 && (
-              <div className="p-4 rounded-xl text-center text-[11px] font-mono" style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+              <div className="p-4 rounded-xl text-center text-sm font-mono" style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
                 No findings yet. Run a campaign first.
               </div>
             )}
@@ -142,10 +142,10 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[11px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                      <span className="font-mono text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                         {item.attack_id}
                       </span>
-                      <span className="font-mono text-[9px] uppercase font-bold px-1.5 py-0.5 rounded"
+                      <span className="font-mono text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
                         style={isExploit
                           ? { background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }
                           : { background: "rgba(16,185,129,0.10)", color: "#6EE7B7", border: "1px solid rgba(16,185,129,0.20)" }
@@ -153,12 +153,12 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                         {isExploit ? "Exploited" : "Defended"}
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+                    <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
                       {item.violated_invariants?.[0] || "None"}
                     </span>
                   </div>
-                  <p className="text-[11px] line-clamp-1 mb-2" style={{ color: "var(--text-secondary)" }}>{item.name}</p>
-                  <div className="flex items-center justify-between text-[10px] font-mono pt-2"
+                  <p className="text-sm line-clamp-1 mb-2" style={{ color: "var(--text-secondary)" }}>{item.name}</p>
+                  <div className="flex items-center justify-between text-xs font-mono pt-2"
                     style={{ borderTop: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}>
                     <span>Severity: <span className={
                       item.severity === "CRITICAL" ? "text-red-400" :
@@ -182,16 +182,16 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                 style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{selected.name}</h2>
-                    <span className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>({selected.attack_id})</span>
+                    <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>{selected.name}</h2>
+                    <span className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>({selected.attack_id})</span>
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                  <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                     {selected.what_leaked_or_abused || "Simulated multi-turn autonomous interaction sequence."}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-[10px] font-mono mb-0.5" style={{ color: "var(--text-muted)" }}>Trace ID</div>
-                  <div className="text-[11px] font-mono" style={{ color: "var(--text-secondary)" }}>
+                  <div className="text-xs font-mono mb-0.5" style={{ color: "var(--text-muted)" }}>Trace ID</div>
+                  <div className="text-sm font-mono" style={{ color: "var(--text-secondary)" }}>
                     {selected.trace_ids?.[0]?.slice(0, 16) ?? "Pending"}...
                   </div>
                 </div>
@@ -199,9 +199,9 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
 
               {/* Replay Error */}
               {replayError && (
-                <div className="rounded-xl px-4 py-3 text-xs font-mono flex items-center gap-2"
+                <div className="rounded-xl px-4 py-3 text-sm font-mono flex items-center gap-2"
                   style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5" }}>
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
                   {replayError}
                 </div>
               )}
@@ -210,11 +210,11 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
               {replayResult && (
                 <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)" }}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-emerald-400 text-[11px] font-mono font-semibold">
+                    <div className="flex items-center gap-2 text-emerald-400 text-sm font-mono font-semibold">
                       <ShieldCheck className="w-4 h-4" />
                       EXACT REPLAY VERIFICATION — Zero Model Calls
                     </div>
-                    <span className="font-mono text-[9px] uppercase font-bold px-2 py-0.5 rounded"
+                    <span className="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded"
                       style={replayResult.exploit_prevented
                         ? { background: "rgba(16,185,129,0.12)", color: "#6EE7B7", border: "1px solid rgba(16,185,129,0.25)" }
                         : { background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }
@@ -222,19 +222,19 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                       {replayResult.exploit_prevented ? "Attack Neutralized" : "Vulnerable"}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-[11px] font-mono">
+                  <div className="grid grid-cols-3 gap-3 text-sm font-mono">
                     {[
                       { label: "Baseline Actions", value: `${replayResult.original_action_count} proposed`, color: "var(--text-primary)" },
                       { label: "Actions Blocked", value: `${replayResult.blocked_count} halted`, color: "#FCA5A5" },
                       { label: "Gate Status",      value: "D1+D2+D3",                              color: "#6EE7B7" },
                     ].map(({ label, value, color }) => (
-                      <div key={label} className="p-2.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
-                        <div className="text-[10px] mb-0.5" style={{ color: "var(--text-muted)" }}>{label}</div>
+                      <div key={label} className="p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
+                        <div className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>{label}</div>
                         <div className="font-bold" style={{ color }}>{value}</div>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px]" style={{ color: "var(--text-secondary)" }}>
+                  <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                     Tool invocations that succeeded in baseline were deterministically re-evaluated
                     against the hardened policy engine. All unauthorized actions were intercepted before execution.
                   </p>
@@ -244,8 +244,8 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
               {/* Step Timeline */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Execution Timeline</span>
-                  <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>{steps.length} events</span>
+                  <span className="text-xs font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Execution Timeline</span>
+                  <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{steps.length} events</span>
                 </div>
 
                 {loadingTrace ? (
@@ -257,36 +257,36 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                 ) : steps.length > 0 ? (
                   <div className="space-y-2">
                     {steps.map((step, idx) => (
-                      <div key={idx} className="rounded-xl p-3.5 space-y-2 text-xs"
+                      <div key={idx} className="rounded-xl p-4 space-y-2 text-sm"
                         style={EVENT_STYLE[step.event_type] ?? DEFAULT_EVENT_STYLE}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded"
+                            <span className="font-mono text-xs px-1.5 py-0.5 rounded"
                               style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
                               #{step.step_number}
                             </span>
-                            <span className="font-mono font-semibold text-[11px]" style={{ color: "var(--text-primary)" }}>
+                            <span className="font-mono font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                               {step.event_type}
                             </span>
                             {step.tainted && (
-                              <span className="inline-flex items-center gap-1 font-mono text-[9px] uppercase font-bold px-1.5 py-0.5 rounded"
+                              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
                                 style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.22)" }}>
-                                <Tag className="w-2.5 h-2.5" /> TAINTED
+                                <Tag className="w-3 h-3" /> TAINTED
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>Actor: {step.actor}</span>
+                          <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Actor: {step.actor}</span>
                         </div>
 
                         {step.tool_name && (
-                          <div className="flex items-center gap-2 font-mono text-[11px]">
+                          <div className="flex items-center gap-2 font-mono text-sm">
                             <span style={{ color: "var(--text-muted)" }}>Tool:</span>
                             <span className="text-blue-400 font-semibold">{step.tool_name}</span>
                           </div>
                         )}
 
                         {step.arguments && Object.keys(step.arguments).length > 0 && (
-                          <div className="rounded-lg p-2.5 overflow-x-auto font-mono text-[10px]"
+                          <div className="rounded-lg p-3 overflow-x-auto font-mono text-xs"
                             style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--border-subtle)" }}>
                             <span className="block mb-1" style={{ color: "var(--text-muted)" }}>Arguments:</span>
                             <pre style={{ color: "var(--text-secondary)", margin: 0 }}>{JSON.stringify(step.arguments, null, 2)}</pre>
@@ -294,7 +294,7 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                         )}
 
                         {step.policy_decision && (
-                          <div className="flex items-center gap-2 font-mono text-[10px]">
+                          <div className="flex items-center gap-2 font-mono text-xs">
                             <span style={{ color: "var(--text-muted)" }}>Policy Decision:</span>
                             <span className={
                               step.policy_decision === "DENY"  ? "text-red-400 font-semibold" :
@@ -307,7 +307,7 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                         )}
 
                         {step.tool_result && (
-                          <div className="rounded-lg p-2 font-mono text-[10px]"
+                          <div className="rounded-lg p-2.5 font-mono text-xs"
                             style={{ background: "rgba(0,0,0,0.2)", border: "1px solid var(--border-subtle)" }}>
                             <span className="block mb-0.5" style={{ color: "var(--text-muted)" }}>Tool Result:</span>
                             <pre style={{ color: "var(--text-secondary)", margin: 0 }}>{JSON.stringify(step.tool_result, null, 2)}</pre>
@@ -315,15 +315,15 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                         )}
 
                         {step.model_output && (
-                          <div className="rounded-lg p-2 text-[11px]" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--border-subtle)" }}>
-                            <span className="block text-[10px] font-mono mb-1" style={{ color: "var(--text-muted)" }}>Model Output:</span>
+                          <div className="rounded-lg p-2.5 text-sm" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--border-subtle)" }}>
+                            <span className="block text-xs font-mono mb-1" style={{ color: "var(--text-muted)" }}>Model Output:</span>
                             <span style={{ color: "var(--text-secondary)" }}>{step.model_output}</span>
                           </div>
                         )}
 
                         {step.input && (
-                          <div className="rounded-lg p-2 text-[11px]" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--border-subtle)" }}>
-                            <span className="block text-[10px] font-mono mb-1" style={{ color: "var(--text-muted)" }}>Input Received:</span>
+                          <div className="rounded-lg p-2.5 text-sm" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid var(--border-subtle)" }}>
+                            <span className="block text-xs font-mono mb-1" style={{ color: "var(--text-muted)" }}>Input Received:</span>
                             <span style={{ color: "var(--text-secondary)" }}>{step.input}</span>
                           </div>
                         )}
@@ -331,14 +331,14 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                     ))}
                   </div>
                 ) : (
-                  <div className="py-10 text-center text-[11px] font-mono rounded-xl" style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+                  <div className="py-10 text-center text-sm font-mono rounded-xl" style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
                     Click an attack on the left to inspect its causal trace.
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl py-16 text-center text-[12px] font-mono"
+            <div className="rounded-2xl py-16 text-center text-sm font-mono"
               style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}>
               No attack traces captured yet. Run a campaign to inspect execution graphs.
             </div>
