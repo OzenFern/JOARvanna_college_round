@@ -26,6 +26,16 @@ class Settings(BaseSettings):
     DEFAULT_MODEL_ADAPTER: str = "mock"
     GEMINI_MODEL_NAME: str = "gemini-2.5-flash"
 
+    # Supabase Auth (optional — enables JWT-based user authentication)
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    JWT_SECRET: str = ""
+    JWT_ALGORITHM: str = "HS256"
+
+    # Legacy API key auth (fallback)
+    API_KEY: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

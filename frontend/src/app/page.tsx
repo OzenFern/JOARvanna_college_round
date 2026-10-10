@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   ShieldAlert,
   Terminal,
@@ -14,8 +15,13 @@ import {
   Wifi,
   WifiOff,
   Database,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
 import { api, setApiKey } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSupabaseConfigured as supabaseConfigured } from "@/lib/supabase";
 import { AttackResult, EvaluationSummary, PermissionAuditItem } from "@/types";
 import DashboardView from "@/components/DashboardView";
 import CampaignRunnerView from "@/components/CampaignRunnerView";
@@ -34,6 +40,7 @@ const TABS = [
 ] as const;
 
 export default function Home() {
+  const { user, signOut, isAuthenticated } = useAuth();
   const [activeTab,    setActiveTab]    = useState<Tab>("dashboard");
   const [backendHealth, setBackendHealth] = useState<"ok" | "offline" | "connecting">("connecting");
   const [dbStatus,     setDbStatus]     = useState<{ engine: string; ready: boolean; configured: boolean } | null>(null);
@@ -179,6 +186,52 @@ export default function Home() {
               <Key className="w-3.5 h-3.5" />
               <span>{hasApiKey ? "Gemini Key (Active)" : "Set Gemini Key"}</span>
             </button>
+
+            {/* Auth Buttons */}
+            {supabaseConfigured ? (
+              isAuthenticated && user ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+                    style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                    <User className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-xs font-mono text-emerald-400 truncate max-w-[120px]">
+                      {user.email}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => signOut()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition"
+                    style={{ background: "rgba(239,68,68,0.10)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.20)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.10)"}
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/auth/login"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition"
+                    style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign in</span>
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-white transition"
+                    style={{
+                      background: "linear-gradient(135deg, #DC2626 0%, #991B1B 100%)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                    }}
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              )
+            ) : null}
           </div>
         </div>
       </header>

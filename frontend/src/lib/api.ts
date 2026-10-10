@@ -3,10 +3,10 @@ const API_BASE = RAW_BASE.endsWith("/api/v1")
   ? RAW_BASE
   : `${RAW_BASE.replace(/\/$/, "")}/api/v1`;
 
-let apiKey: string | null = null;
+let authToken: string | null = null;
 
-export function setApiKey(key: string) {
-  apiKey = key.trim() || null;
+export function setApiKey(token: string) {
+  authToken = token.trim() || null;
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -18,8 +18,9 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     ...(options?.headers as Record<string, string> || {}),
   };
 
-  if (apiKey) {
-    headers["X-API-Key"] = apiKey;
+  // Send as Bearer token for Supabase JWT auth
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url, {
