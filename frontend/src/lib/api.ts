@@ -67,24 +67,14 @@ export const api = {
     return request<any[]>("/evaluations/latest");
   },
 
-  async runEvaluation(payload?: {
-    defenses?: string[];
-    attacks?: string[];
-    trials?: number;
-    adapter?: string;
-  }) {
+
+  async runEvaluation() {
     return request<{ summaries: any[] }>("/evaluations/run", {
       method: "POST",
-      body: JSON.stringify(payload || {}),
     });
   },
 
-  async startCampaign(payload: {
-    attack_ids?: string[];
-    defense?: string;
-    adapter?: string;
-    trials?: number;
-  }) {
+  async startCampaign(payload: any) {
     return request<any>("/campaigns", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -95,20 +85,10 @@ export const api = {
     return request<any>(`/traces/${traceId}`);
   },
 
-  async replayTrace(traceId: string, targetDefense: string = "D1+D2+D3") {
+  async replayTrace(traceId: string, targetDefense?: string) {
     return request<any>(`/traces/${traceId}/replay`, {
       method: "POST",
-      body: JSON.stringify({ target_defense: targetDefense }),
-    });
-  },
-
-  async getBackupStatus() {
-    return request<any>("/backup/status");
-  },
-
-  async exportBackup() {
-    return request<any>("/backup/export", {
-      method: "POST",
+      body: JSON.stringify(targetDefense ? { target_defense: targetDefense } : {}),
     });
   },
 };
