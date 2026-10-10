@@ -1,4 +1,4 @@
-"""Tool Gateway (Pre-Execution Action Gateway) intercepting tool executions."""
+"""Tool Gateway (Pre-Execution Action Gateway) per PRD Section 6."""
 
 import uuid
 from typing import Any, Callable, Dict, List, Optional

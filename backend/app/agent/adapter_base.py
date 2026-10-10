@@ -1,4 +1,4 @@
-"""Model Adapter Interface for pluggable LLM integrations."""
+"""Model Adapter Interface per PRD Section 5.4."""
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional

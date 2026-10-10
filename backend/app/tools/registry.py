@@ -1,4 +1,4 @@
-"""Mock tools implementation for sandboxed customer support assistant execution."""
+"""Mock tools implementation per PRD Section 5.2."""
 
 from pathlib import Path
 from typing import Any, Dict

@@ -1,4 +1,4 @@
-"""Rule-based Invariant Judge and Severity Scorer for attack evaluation."""
+"""Rule-based Invariant Judge and Severity Scorer per PRD Section 9."""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field

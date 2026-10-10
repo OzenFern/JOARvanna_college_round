@@ -1,4 +1,4 @@
-"""API Endpoints for Red Team Attack Catalog."""
+"""API Endpoints for Attacks per PRD Section 12.4."""
 
 from typing import List
 from fastapi import APIRouter

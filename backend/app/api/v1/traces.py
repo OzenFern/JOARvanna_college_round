@@ -1,4 +1,4 @@
-"""API Endpoints for Traces and Exact Replay."""
+"""API Endpoints for Traces and Exact Replay per PRD Section 10.4 & 12.4."""
 
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query

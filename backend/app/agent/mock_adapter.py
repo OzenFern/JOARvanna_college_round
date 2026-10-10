@@ -1,4 +1,4 @@
-"""Deterministic Mock Model Adapter simulating adversary responses and tool calls."""
+"""Deterministic Mock Model Adapter per PRD Section 5.4."""
 
 import re
 from typing import Any, Dict, List

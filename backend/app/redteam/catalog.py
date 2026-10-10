@@ -1,4 +1,4 @@
-"""Attack Library Catalog (10 Attacks across Prompt, Document, Memory, and Tool surfaces)."""
+"""Attack Library Catalog (10 Attacks) per PRD Section 8.1."""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field

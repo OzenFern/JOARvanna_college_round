@@ -1,4 +1,4 @@
-"""Trace recorder and persistence engine for causal audit trails."""
+"""Trace recorder and persistence engine per PRD Section 7.2 & 10.4."""
 
 import json
 import uuid

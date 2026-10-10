@@ -33,7 +33,7 @@ export default function PermissionAuditView({
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-zinc-100">Permission &amp; Capability Least-Privilege Audit</h1>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-amber-950/70 text-amber-300 border border-amber-800/50">
-                Least-Privilege Enforcement
+                Section 9.4 Invariant
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-1 max-w-2xl leading-relaxed">

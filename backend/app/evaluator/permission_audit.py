@@ -1,4 +1,4 @@
-"""Permission Audit Engine comparing declared vs used vs reachable agent permissions."""
+"""Permission Audit Engine per PRD Section 9.4."""
 
 from typing import Dict, List
 from pydantic import BaseModel

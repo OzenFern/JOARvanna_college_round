@@ -1,4 +1,4 @@
-"""API Endpoints for Defense Matrix Evaluations."""
+"""API Endpoints for Evaluations per PRD Section 12.4."""
 
 from typing import List, Optional
 from fastapi import APIRouter, Header, HTTPException

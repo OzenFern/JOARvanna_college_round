@@ -1,4 +1,4 @@
-"""API Endpoints for Red Team Campaigns."""
+"""API Endpoints for Campaigns per PRD Section 12.4."""
 
 import uuid
 from typing import Dict, List, Optional
