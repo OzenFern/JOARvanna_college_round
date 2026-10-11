@@ -55,6 +55,7 @@ This guide walks you through deploying AgentBreak to **Vercel** (frontend), **Re
    SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
    SUPABASE_JWT_SECRET=<your-jwt-secret>
    CORS_ORIGINS=["https://your-frontend.vercel.app","http://localhost:3000"]
+   CORS_ORIGIN_REGEX=https://[a-zA-Z0-9-]+\.vercel\.app
    GEMINI_API_KEY=<optional-gemini-key>
    ```
 
@@ -105,6 +106,7 @@ This guide walks you through deploying AgentBreak to **Vercel** (frontend), **Re
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | ✅ |
 | `SUPABASE_JWT_SECRET` | Supabase JWT secret | ✅ |
 | `CORS_ORIGINS` | Allowed frontend origins | ✅ |
+| `CORS_ORIGIN_REGEX` | Allowed Vercel preview frontend origins | ❌ |
 | `GEMINI_API_KEY` | Google Gemini API key | ❌ |
 
 ### Frontend (Vercel)
@@ -162,7 +164,8 @@ This guide walks you through deploying AgentBreak to **Vercel** (frontend), **Re
 ## Troubleshooting
 
 ### CORS Errors
-Make sure your `CORS_ORIGINS` in the backend includes your Vercel frontend URL.
+Make sure your `CORS_ORIGINS` in the backend includes your Vercel frontend URL, or configure
+`CORS_ORIGIN_REGEX` for preview deployments.
 
 ### Auth Not Working
 - Verify `SUPABASE_JWT_SECRET` is set correctly in the backend

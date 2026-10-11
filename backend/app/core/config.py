@@ -16,7 +16,13 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
 
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    # Allows Vercel preview deployments without requiring a backend redeploy
+    # for every generated preview URL.
+    CORS_ORIGIN_REGEX: str = r"https://[a-zA-Z0-9-]+\.vercel\.app"
 
     # Security & Thresholds
     REFUND_APPROVAL_THRESHOLD: float = 50.0
