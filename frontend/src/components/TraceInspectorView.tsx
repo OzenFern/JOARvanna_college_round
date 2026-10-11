@@ -66,7 +66,7 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
     if (!traceId) return;
     setReplayLoading(true);
     try {
-      const res = await api.replayTrace(traceId);
+      const res = await api.replayTrace(traceId, targetDefense);
       setReplayResult(res as any);
     } catch (err: any) {
       alert(`Replay failed: ${err.message}`);
@@ -177,11 +177,23 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
 
               {/* Exact Replay Verification Box (Clean Light Banner) */}
               {replayResult && (
-                <div className="rounded-xl border border-[#2e6a4f]/30 bg-[#e9f3ed] p-4 space-y-3">
+                <div className={`rounded-xl border p-4 space-y-3 ${
+                  replayResult.verdict.success
+                    ? "border-[#b83a32]/30 bg-[#fbecea]"
+                    : "border-[#2e6a4f]/30 bg-[#e9f3ed]"
+                }`}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[#2e6a4f] text-xs font-semibold">
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>EXACT REPLAY VERIFICATION: {replayResult.model_calls_made} Model Calls Used</span>
+                    <div className={`flex items-center gap-2 text-xs font-semibold ${
+                      replayResult.verdict.success ? "text-[#b83a32]" : "text-[#2e6a4f]"
+                    }`}>
+                      {replayResult.verdict.success ? (
+                        <AlertTriangle className="w-4 h-4" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4" />
+                      )}
+                      <span>
+                        EXACT REPLAY: {replayResult.model_calls_made} Model Calls Used
+                      </span>
                     </div>
                     <span className={`badge ${replayResult.verdict.success ? "badge-fail" : "badge-pass"}`}>
                       {replayResult.verdict.success ? "Still Vulnerable" : "Attack Neutralized"}
@@ -203,12 +215,20 @@ export default function TraceInspectorView({ findings }: TraceInspectorViewProps
                     </div>
                     <div className="bg-white p-2 rounded-lg border border-[#d9d8d3]">
                       <div className="text-[#8a8c97] text-[10px]">Policy Gate Status</div>
-                      <div className="text-[#2e6a4f] font-semibold mt-0.5">{replayResult.target_defense} Enforced</div>
+                      <div className={`font-semibold mt-0.5 ${
+                        replayResult.verdict.success ? "text-[#b83a32]" : "text-[#2e6a4f]"
+                      }`}>
+                        {replayResult.target_defense} Evaluated
+                      </div>
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-[#2e6a4f]/90 leading-relaxed">
-                    Cached tool proposals were re-evaluated through the ToolGateway. Deterministic software invariants intercepted the payload without re-prompting the LLM.
+                  <p className={`text-[11px] leading-relaxed ${
+                    replayResult.verdict.success ? "text-[#b83a32]" : "text-[#2e6a4f]"
+                  }`}>
+                    {replayResult.verdict.success
+                      ? `Cached tool proposals were re-evaluated under ${replayResult.target_defense}, but the replay still violated the listed invariants.`
+                      : "Cached tool proposals were re-evaluated through the ToolGateway. Deterministic software invariants intercepted the payload without re-prompting the LLM."}
                   </p>
                 </div>
               )}
