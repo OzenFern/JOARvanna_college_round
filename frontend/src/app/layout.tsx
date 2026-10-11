@@ -3,8 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
-  title: "AgentBreak — The Autonomous AI Red Team",
-  description: "Autonomous security testing platform for AI agents with tools.",
+  title: "AgentBreak · Autonomous AI Red Team & Policy Verifier",
+  description: "Find the vulnerability in an AI agent's execution, and prove the fix with exact policy replays.",
 };
 
 export default function RootLayout({
@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#0A0E16] text-zinc-100 min-h-screen antialiased selection:bg-red-500/20 selection:text-red-300">
+    <html lang="en">
+      <body className="min-h-screen antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>

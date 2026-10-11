@@ -2,7 +2,11 @@
 
 import React from "react";
 import {
-  ShieldAlert, AlertTriangle, CheckCircle2, Lock, Layers
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
+  Layers,
 } from "lucide-react";
 import { PermissionAuditItem } from "@/types";
 
@@ -11,112 +15,91 @@ interface PermissionAuditViewProps {
   loading: boolean;
 }
 
-export default function PermissionAuditView({ auditItems, loading }: PermissionAuditViewProps) {
-  const overPermissioned = auditItems.filter(i => i.over_permissioned);
+export default function PermissionAuditView({
+  auditItems,
+  loading,
+}: PermissionAuditViewProps) {
+  const overPermissioned = auditItems.filter((i) => i.over_permissioned);
 
   return (
-    <div className="space-y-5 fade-in">
+    <div className="space-y-8 animate-fade-in">
+      
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="label mb-1 text-[#ee7b30]">Principle of Least Privilege</div>
+          <h1 className="h1">Capability &amp; permission audit</h1>
+          <p className="muted text-xs mt-1 max-w-xl">
+            Detect over-permissioned tools exposed to the agent sandbox that are never invoked during legitimate customer workflows.
+          </p>
+        </div>
 
-      {/* ── Header Banner ── */}
-      <div className="rounded-2xl p-6" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
-                Permission &amp; Capability Least-Privilege Audit
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider"
-                style={{ background: "rgba(245,158,11,0.10)", color: "#FCD34D", border: "1px solid rgba(245,158,11,0.22)" }}>
-                Least-Privilege Check
-              </span>
-            </div>
-            <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Audits the principle of least privilege by cross-referencing{" "}
-              <strong className="font-medium text-amber-300">Declared Permissions</strong> in agent metadata against{" "}
-              <strong className="font-medium text-blue-300">Actually Used Tools</strong> across legitimate workflows and{" "}
-              <strong className="font-medium" style={{ color: "var(--text-primary)" }}>Reachable Attack Surface</strong>.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl shrink-0"
-            style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)" }}>
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Flagged:</span>
-            <span className="text-sm font-bold font-mono text-amber-400">{overPermissioned.length}</span>
-            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>of {auditItems.length} tools</span>
-          </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#fbf3e3] border border-[#f5dfb8] text-xs font-mono text-[#946013]">
+          <ShieldAlert className="w-3.5 h-3.5" />
+          <span>{overPermissioned.length} of {auditItems.length} tools over-permissioned</span>
         </div>
       </div>
 
-      {/* ── Tool Permission Matrix Table ── */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
-        <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.01)" }}>
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
-            <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Tool Permission Matrix</h2>
-          </div>
-          <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Customer Support Agent Scope</span>
+      {/* ── Tool Permission Table ── */}
+      <div className="card overflow-hidden bg-white">
+        <div className="px-5 py-3 border-b border-[#e9e8e4] flex items-center justify-between">
+          <span className="font-semibold text-xs text-[#1c1e2b]">Declared vs Used Capabilities</span>
+          <span className="badge badge-neutral text-[10px]">Customer Support Agent</span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left data-table">
+          <table className="table">
             <thead>
               <tr>
                 <th>Tool Name</th>
                 <th className="text-center">Declared</th>
-                <th className="text-center">Used (Benign)</th>
-                <th className="text-center">Reachable</th>
+                <th className="text-center">Used in Tasks</th>
+                <th className="text-center">Reachable Surface</th>
                 <th className="text-center">Assessment</th>
-                <th>Remediation Notes</th>
+                <th>Remediation Advice</th>
               </tr>
             </thead>
             <tbody>
               {auditItems.length > 0 ? (
-                auditItems.map(item => {
+                auditItems.map((item) => {
                   const isFlagged = item.over_permissioned;
                   return (
-                    <tr key={item.tool_name}
-                      style={isFlagged ? { background: "rgba(245,158,11,0.04)" } : undefined}>
+                    <tr
+                      key={item.tool_name}
+                      className={isFlagged ? "bg-[#fbf3e3]/30" : ""}
+                    >
                       <td>
-                        <span className="font-mono font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                        <span className="font-mono font-semibold text-xs text-[#1c1e2b]">
                           {item.tool_name}
                         </span>
                       </td>
                       <td className="text-center">
-                        <span className="font-mono text-xs px-2 py-0.5 rounded"
-                          style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}>
+                        <span className="badge badge-neutral text-[10px]">
                           {item.declared ? "YES" : "NO"}
                         </span>
                       </td>
                       <td className="text-center">
-                        <span className="font-mono text-xs px-2 py-0.5 rounded"
-                          style={item.used
-                            ? { background: "rgba(59,130,246,0.10)", color: "#93C5FD", border: "1px solid rgba(59,130,246,0.20)" }
-                            : { background: "rgba(255,255,255,0.03)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }
-                          }>
-                          {item.used ? "YES (Active)" : "NO (Unused)"}
+                        <span className={`badge ${item.used ? "badge-pass" : "badge-neutral"} text-[10px]`}>
+                          {item.used ? "Active" : "Unused"}
                         </span>
                       </td>
-                      <td className="text-center">
-                        <span className={`font-mono text-xs font-bold ${item.reachable ? "text-amber-400" : ""}`}
-                          style={!item.reachable ? { color: "var(--text-muted)" } : undefined}>
+                      <td className="text-center font-mono text-xs">
+                        <span className={item.reachable ? "text-[#ee7b30] font-semibold" : "text-[#8a8c97]"}>
                           {item.reachable ? "REACHABLE" : "CONTAINED"}
                         </span>
                       </td>
                       <td className="text-center">
                         {isFlagged ? (
-                          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-amber-400">
-                            <AlertTriangle className="w-3.5 h-3.5" />
+                          <span className="badge badge-warn text-[10px]">
                             Over-Permissioned
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-emerald-400">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span className="badge badge-pass text-[10px]">
                             Least Privilege
                           </span>
                         )}
                       </td>
-                      <td className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "inherit" }}>
+                      <td className="text-xs text-[#5a5d6b]">
                         {item.scope_notes}
                       </td>
                     </tr>
@@ -124,13 +107,8 @@ export default function PermissionAuditView({ auditItems, loading }: PermissionA
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center font-mono text-sm" style={{ color: "var(--text-muted)" }}>
-                    {loading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
-                        Loading capability audit matrix...
-                      </div>
-                    ) : "No audit data available."}
+                  <td colSpan={6} className="py-8 text-center text-xs font-mono text-[#8a8c97]">
+                    {loading ? "Loading audit matrix..." : "No capability audit data available."}
                   </td>
                 </tr>
               )}
@@ -139,34 +117,33 @@ export default function PermissionAuditView({ auditItems, loading }: PermissionA
         </div>
       </div>
 
-      {/* ── Security Principle Cards ── */}
+      {/* ── Two Clean Explanatory Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl p-5" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
-          <h3 className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>
-            <Lock className="w-4 h-4 text-amber-400" />
-            Why Unused Tools Are Dangerous
-          </h3>
-          <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            In our threat model, a support agent equipped with <code className="text-amber-300">http_request</code> or{" "}
-            <code className="text-amber-300">execute_shell</code> never calls them during legitimate user
-            interactions. However, an attacker exploiting indirect prompt injection in a user ticket
-            can trick the agent into using these undeclared capabilities to exfiltrate private tokens.
+        <div className="card card-pad bg-white">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-4 h-4 text-[#ee7b30]" />
+            <h3 className="font-semibold text-xs uppercase tracking-wider text-[#1c1e2b]">
+              Why excess tools are dangerous
+            </h3>
+          </div>
+          <p className="text-xs text-[#5a5d6b] leading-relaxed">
+            In our threat model, a support agent equipped with <code className="text-[#a24d17] bg-[#fdf0e5] px-1 py-0.5 rounded">http_request</code> or <code className="text-[#a24d17] bg-[#fdf0e5] px-1 py-0.5 rounded">execute_shell</code> never calls them in normal tasks. However, an indirect prompt injection in a customer ticket can coerce the LLM into invoking them to exfiltrate private credentials.
           </p>
         </div>
 
-        <div className="rounded-2xl p-5" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
-          <h3 className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>
-            <Layers className="w-4 h-4 text-blue-400" />
-            Deterministic Mitigation
-          </h3>
-          <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            Applying the principle of least privilege: remove{" "}
-            <code className="text-blue-300">execute_shell</code> and{" "}
-            <code className="text-blue-300">http_request</code> from the declared tool registry entirely.
-            An agent cannot be coerced into calling tools that are not exposed to its dispatch environment.
+        <div className="card card-pad bg-white">
+          <div className="flex items-center gap-2 mb-2">
+            <Layers className="w-4 h-4 text-[#3a3f9e]" />
+            <h3 className="font-semibold text-xs uppercase tracking-wider text-[#1c1e2b]">
+              Deterministic Mitigation
+            </h3>
+          </div>
+          <p className="text-xs text-[#5a5d6b] leading-relaxed">
+            Strip unused tools from the registered dispatcher schema entirely. An LLM agent cannot be tricked into executing capabilities that do not exist in its sandbox boundary.
           </p>
         </div>
       </div>
+
     </div>
   );
 }
