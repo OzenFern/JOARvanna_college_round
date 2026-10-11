@@ -1,6 +1,7 @@
-"""Mock tools implementation per PRD Section 5.2."""
+"""Mock tools implementation"""
 
 from pathlib import Path
+import math
 from typing import Any, Dict
 from app.core.config import settings
 from app.tools.mock_data import MOCK_ORDERS, MOCK_DOCUMENTS
@@ -80,17 +81,32 @@ def send_email(to: str, subject: str, body: str) -> dict:
 
 def process_refund(order_id: str, amount: float) -> dict:
     """Simulate issuing a refund."""
+    clean_id = order_id.strip()
+    if clean_id not in MOCK_ORDERS:
+        return {"status": "error", "message": f"Order {clean_id} not found."}
+    try:
+        amount_value = float(amount)
+    except (TypeError, ValueError):
+        return {"status": "error", "message": "Refund amount must be numeric."}
+    if not math.isfinite(amount_value) or amount_value < 0:
+        return {"status": "error", "message": "Refund amount must be a finite non-negative number."}
+    cumulative = sum(
+        float(refund["amount"]) for refund in _SIMULATED_REFUNDS
+        if refund["order_id"] == clean_id
+    )
+    if cumulative + amount_value > settings.REFUND_HARD_LIMIT:
+        return {"status": "error", "message": "Cumulative refund limit exceeded."}
     record = {
-        "order_id": order_id,
-        "amount": amount,
+        "order_id": clean_id,
+        "amount": amount_value,
     }
     _SIMULATED_REFUNDS.append(record)
     return {
         "status": "success",
         "action": "refund_processed",
-        "order_id": order_id,
-        "amount": amount,
-        "details": f"Simulated refund of ${amount:.2f} executed.",
+        "order_id": clean_id,
+        "amount": amount_value,
+        "details": f"Simulated refund of ${amount_value:.2f} executed.",
     }
 
 def http_request(url: str, method: str = "POST", body: str = "") -> dict:

@@ -1,20 +1,26 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = RAW_BASE.endsWith("/api/v1")
+  ? RAW_BASE
+  : `${RAW_BASE.replace(/\/$/, "")}/api/v1`;
 
-let apiKey: string | null = null;
+let authToken: string | null = null;
 
-export function setApiKey(key: string) {
-  apiKey = key;
+export function setApiKey(token: string) {
+  authToken = token.trim() || null;
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
-  const headers: HeadersInit = {
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE}${cleanEndpoint}`;
+
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options?.headers || {}),
+    ...(options?.headers as Record<string, string> || {}),
   };
 
-  if (apiKey) {
-    headers["X-API-Key"] = apiKey;
+  // Send as Bearer token for Supabase JWT auth
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url, {
@@ -23,7 +29,14 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+    let errorDetail = `API error: ${response.status} ${response.statusText}`;
+    try {
+      const data = await response.json();
+      if (data && data.detail) errorDetail = data.detail;
+    } catch {
+      // not JSON
+    }
+    throw new Error(errorDetail);
   }
 
   return response.json();
@@ -42,6 +55,10 @@ export const api = {
     return request<any[]>("/findings");
   },
 
+  async getPolicy() {
+    return request<any>("/policy");
+  },
+
   async getPermissionAudit() {
     return request<any[]>("/audit/permissions");
   },
@@ -50,10 +67,19 @@ export const api = {
     return request<any[]>("/evaluations/latest");
   },
 
+
   async runEvaluation() {
     return request<{ summaries: any[] }>("/evaluations/run", {
       method: "POST",
     });
+  },
+
+  async getDbStatus() {
+    return request<{ engine: string; ready: boolean; configured: boolean }>("/db/status");
+  },
+
+  async listCampaigns() {
+    return request<any[]>("/campaigns");
   },
 
   async startCampaign(payload: any) {

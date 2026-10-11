@@ -1,165 +1,152 @@
 "use client";
 
 import React, { useState } from "react";
-import { Terminal, Play, ShieldAlert, CheckCircle2, AlertTriangle, ArrowRight, Layers } from "lucide-react";
+import { Terminal, Play, CheckCircle2, AlertTriangle, Layers, RotateCcw } from "lucide-react";
 import { AttackResult } from "@/types";
 import { api } from "@/lib/api";
 
 interface CampaignRunnerViewProps {
-  onInspectTrace: (traceId: string) => void;
+  onInspectTrace?: (traceId?: string) => void;
   attacks: any[];
 }
 
 export default function CampaignRunnerView({ onInspectTrace, attacks }: CampaignRunnerViewProps) {
-  const [selectedDefense, setSelectedDefense] = useState<string>("D0");
-  const [selectedAdapter, setSelectedAdapter] = useState<string>("mock");
+  const [selectedDefense, setSelectedDefense] = useState("D0");
+  const [selectedAdapter, setSelectedAdapter] = useState("mock");
   const [selectedAttacks, setSelectedAttacks] = useState<string[]>([]);
-  const [trials, setTrials] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [trials, setTrials] = useState(3);
+  const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AttackResult[]>([]);
   const [campaignStats, setCampaignStats] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleToggleAttack = (id: string) => {
+  const handleToggle = (id: string) =>
     setSelectedAttacks((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
     );
-  };
 
-  const handleSelectAll = () => {
-    if (selectedAttacks.length === attacks.length) {
-      setSelectedAttacks([]);
-    } else {
-      setSelectedAttacks(attacks.map((a) => a.id));
-    }
-  };
+  const handleSelectAll = () =>
+    setSelectedAttacks(selectedAttacks.length === attacks.length ? [] : attacks.map((a) => a.id));
 
   const handleLaunch = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const payload = {
+      const data = await api.startCampaign({
         attack_ids: selectedAttacks.length > 0 ? selectedAttacks : undefined,
         defense: selectedDefense,
         adapter: selectedAdapter,
         trials,
-      };
-      const data = await api.startCampaign(payload);
+      });
       setCampaignStats(data);
       setResults(data.results || []);
     } catch (err: any) {
-      alert("Error starting campaign: " + err.message);
+      setError(err.message || "Campaign failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Configuration Header Panel */}
-      <div className="rounded-xl border border-zinc-800 bg-[#121620] p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
-          <div>
-            <h1 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-red-400" />
-              <span>Red Team Campaign Runner</span>
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              Select attacks, configure active defense layers, and launch an autonomous red-team evaluation run.
-            </p>
-          </div>
-
-          <button
-            onClick={handleLaunch}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono bg-red-600 hover:bg-red-500 text-white font-medium transition shadow-sm disabled:opacity-50"
-          >
-            {loading ? (
-              <span className="animate-spin inline-block h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-              <Play className="w-3.5 h-3.5 fill-current" />
-            )}
-            <span>{loading ? "Executing Campaign..." : "Launch Campaign"}</span>
-          </button>
+    <div className="space-y-6 animate-fade-in">
+      
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="label mb-1 text-[#ee7b30]">Automated Red Team Suite</div>
+          <h1 className="h1">Run an adversarial campaign</h1>
+          <p className="muted text-xs mt-1 max-w-xl">
+            Select attack vectors, choose active defense layers, and launch autonomous multi-turn testing with adaptive mutations.
+          </p>
         </div>
 
-        {/* Configuration Controls Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
-          {/* Defense Selector */}
+        <button
+          onClick={handleLaunch}
+          disabled={loading}
+          className="btn btn-sm btn-primary self-start sm:self-auto"
+        >
+          {loading ? (
+            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Play className="w-3 h-3 fill-current" />
+          )}
+          <span>{loading ? "Executing trials..." : "Launch campaign"}</span>
+        </button>
+      </div>
+
+      {/* ── Configuration Card ── */}
+      <div className="card card-pad bg-white space-y-5">
+        
+        {/* Controls Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
-              Active Defense Configuration
-            </label>
+            <label className="label mb-1.5 block">Active Defense</label>
             <select
               value={selectedDefense}
               onChange={(e) => setSelectedDefense(e.target.value)}
-              className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
+              className="w-full bg-[#f6f6f4] border border-[#e9e8e4] rounded-xl px-3 py-2 text-xs font-mono text-[#1c1e2b] outline-none focus:border-[#ee7b30]"
             >
-              <option value="D0">D0 — Baseline (Unhardened Prompt Only)</option>
-              <option value="D1">D1 — Tool Gatekeeper (Allowlists &amp; Thresholds)</option>
-              <option value="D2">D2 — Canary Egress Filter (Canary Shield)</option>
-              <option value="D3">D3 — Content Sanitizer &amp; Taint Rule</option>
-              <option value="D1+D2+D3">D1+D2+D3 — Full Stack Defense (All Layers)</option>
+              <option value="D0">D0 — Baseline (Prompt Only)</option>
+              <option value="D1">D1 — Tool Gatekeeper</option>
+              <option value="D2">D2 — Canary Egress Filter</option>
+              <option value="D3">D3 — Content Sanitizer</option>
+              <option value="D1+D2+D3">D1+D2+D3 — Full Stack</option>
             </select>
           </div>
 
-          {/* Model Adapter Selector */}
           <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
-              Target Model Adapter
-            </label>
+            <label className="label mb-1.5 block">Model Adapter</label>
             <select
               value={selectedAdapter}
               onChange={(e) => setSelectedAdapter(e.target.value)}
-              className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
+              className="w-full bg-[#f6f6f4] border border-[#e9e8e4] rounded-xl px-3 py-2 text-xs font-mono text-[#1c1e2b] outline-none focus:border-[#ee7b30]"
             >
-              <option value="mock">Deterministic Mock Model (Default / Free / Fast)</option>
-              <option value="gemini">Gemini Model (Requires in-memory API key)</option>
+              <option value="mock">Deterministic Mock (Free / Fast)</option>
+              <option value="gemini">Gemini Live (Requires Key)</option>
             </select>
           </div>
 
-          {/* Trials Count */}
           <div>
-            <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1.5">
-              Independent Trials Per Attack
-            </label>
+            <label className="label mb-1.5 block">Trials Per Attack</label>
             <input
               type="number"
               min={1}
               max={10}
               value={trials}
               onChange={(e) => setTrials(parseInt(e.target.value) || 1)}
-              className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
+              className="w-full bg-[#f6f6f4] border border-[#e9e8e4] rounded-xl px-3 py-2 text-xs font-mono text-[#1c1e2b] outline-none focus:border-[#ee7b30]"
             />
           </div>
         </div>
 
-        {/* Quick Attack Picker */}
-        <div className="mt-5 pt-4 border-t border-zinc-800/60">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-mono text-zinc-300">
-              Selected Attacks ({selectedAttacks.length > 0 ? selectedAttacks.length : attacks.length} of {attacks.length}):
+        {/* Attack Selector Chips */}
+        <div className="pt-4 border-t border-[#e9e8e4]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="label">
+              Selected Attacks ({selectedAttacks.length > 0 ? selectedAttacks.length : attacks.length} of {attacks.length})
             </span>
             <button
               onClick={handleSelectAll}
-              className="text-xs font-mono text-red-400 hover:text-red-300 transition"
+              className="text-xs font-medium text-[#ee7b30] hover:underline"
             >
-              {selectedAttacks.length === attacks.length ? "Deselect All" : "Select All 10"}
+              {selectedAttacks.length === attacks.length ? "Deselect All" : "Select All"}
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {attacks.map((atk) => {
               const isSelected = selectedAttacks.includes(atk.id) || selectedAttacks.length === 0;
               return (
                 <button
                   key={atk.id}
-                  onClick={() => handleToggleAttack(atk.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-mono transition border ${
+                  onClick={() => handleToggle(atk.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-mono transition border ${
                     isSelected
-                      ? "bg-zinc-800 text-zinc-200 border-zinc-700"
-                      : "bg-[#0B0D13] text-zinc-500 border-zinc-800/80 hover:text-zinc-400"
+                      ? "bg-[#1c1e2b] text-white border-[#1c1e2b]"
+                      : "bg-[#f6f6f4] text-[#5a5d6b] border-[#e9e8e4] hover:bg-[#efefec]"
                   }`}
                 >
-                  {atk.id}: {atk.name.split(" ")[0]}
+                  {atk.id}: {atk.name?.split(" ")[0]}
                 </button>
               );
             })}
@@ -167,30 +154,34 @@ export default function CampaignRunnerView({ onInspectTrace, attacks }: Campaign
         </div>
       </div>
 
-      {/* Results Table Panel */}
+      {/* ── Error Box ── */}
+      {error && (
+        <div className="p-3.5 rounded-xl bg-[#fbecea] border border-[#b83a32]/20 text-[#b83a32] text-xs font-mono flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* ── Campaign Outcomes Table ── */}
       {results.length > 0 && (
-        <div className="rounded-xl border border-zinc-800 bg-[#121620] overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0E111A]">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-200 font-semibold uppercase tracking-wider">
-                Campaign Outcomes ({results.length} Scenarios)
-              </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700">
-                Defense: {selectedDefense}
-              </span>
+        <div className="card overflow-hidden bg-white">
+          <div className="px-5 py-3 border-b border-[#e9e8e4] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-xs text-[#1c1e2b]">Campaign Outcomes</span>
+              <span className="badge badge-neutral text-[10px]">{selectedDefense}</span>
             </div>
 
             {campaignStats && (
-              <div className="text-xs font-mono text-zinc-400 flex items-center gap-4">
+              <div className="flex items-center gap-3 text-xs font-mono text-[#5a5d6b]">
                 <span>
                   Exploits:{" "}
-                  <strong className={campaignStats.successful_exploits > 0 ? "text-red-400" : "text-emerald-400"}>
+                  <strong className={campaignStats.successful_exploits > 0 ? "text-[#b83a32]" : "text-[#2e6a4f]"}>
                     {campaignStats.successful_exploits} / {campaignStats.total_attacks}
                   </strong>
                 </span>
                 <span>
                   Rate:{" "}
-                  <strong className={campaignStats.exploit_rate > 0 ? "text-red-400" : "text-emerald-400"}>
+                  <strong className={campaignStats.exploit_rate > 0 ? "text-[#b83a32]" : "text-[#2e6a4f]"}>
                     {(campaignStats.exploit_rate * 100).toFixed(1)}%
                   </strong>
                 </span>
@@ -199,83 +190,59 @@ export default function CampaignRunnerView({ onInspectTrace, attacks }: Campaign
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="table">
               <thead>
-                <tr className="border-b border-zinc-800/80 bg-zinc-900/40 text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
-                  <th className="py-2.5 px-4">Attack</th>
-                  <th className="py-2.5 px-4">Surface</th>
-                  <th className="py-2.5 px-4">Result</th>
-                  <th className="py-2.5 px-4">Severity</th>
-                  <th className="py-2.5 px-4">Violations</th>
-                  <th className="py-2.5 px-4">Mutations</th>
-                  <th className="py-2.5 px-4 text-right">Action</th>
+                <tr>
+                  <th>Attack</th>
+                  <th>Surface</th>
+                  <th>Verdict</th>
+                  <th>Severity</th>
+                  <th>Violated Invariants</th>
+                  <th>Mutations</th>
+                  <th className="text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50 font-mono">
+              <tbody>
                 {results.map((r) => {
                   const isExploit = r.successes > 0;
                   return (
-                    <tr key={r.attack_id} className="hover:bg-zinc-900/30 transition">
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-zinc-200">{r.attack_id}</div>
-                        <div className="text-[11px] text-zinc-400 max-w-xs truncate">{r.name}</div>
+                    <tr key={r.attack_id}>
+                      <td>
+                        <div className="font-mono font-semibold text-xs text-[#1c1e2b]">{r.attack_id}</div>
+                        <div className="text-[11px] text-[#5a5d6b] truncate max-w-[180px]">{r.name}</div>
                       </td>
-
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] uppercase font-mono bg-zinc-900 border border-zinc-800 text-zinc-300">
-                          {r.surface}
+                      <td>
+                        <span className="badge badge-neutral text-[10px]">{r.surface}</span>
+                      </td>
+                      <td>
+                        <span className={`badge ${isExploit ? "badge-fail" : "badge-pass"}`}>
+                          {isExploit ? "Exploit Confirmed" : "Blocked"}
                         </span>
                       </td>
-
-                      <td className="py-3 px-4">
-                        {isExploit ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-red-950/70 text-red-400 border border-red-800/40">
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>EXPLOIT CONFIRMED</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>BLOCKED BY POLICY</span>
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          r.severity === "CRITICAL" ? "bg-red-900/60 text-red-300 border border-red-700" :
-                          r.severity === "HIGH" ? "bg-amber-900/60 text-amber-300 border border-amber-700" :
-                          r.severity === "MEDIUM" ? "bg-yellow-950/60 text-yellow-300 border border-yellow-800" :
-                          "bg-zinc-800 text-zinc-400"
+                      <td>
+                        <span className={`font-mono text-xs font-semibold ${
+                          r.severity === "CRITICAL" ? "text-[#b83a32]" : "text-[#1c1e2b]"
                         }`}>
                           {r.severity}
                         </span>
                       </td>
-
-                      <td className="py-3 px-4 text-zinc-400">
+                      <td className="font-mono text-xs">
                         {r.violated_invariants.length > 0 ? (
-                          <span className="text-red-400 font-bold">{r.violated_invariants.join(", ")}</span>
+                          <span className="text-[#b83a32] font-semibold">{r.violated_invariants.join(", ")}</span>
                         ) : (
-                          <span className="text-zinc-600">None</span>
+                          <span className="text-[#8a8c97]">None</span>
                         )}
                       </td>
-
-                      <td className="py-3 px-4 text-zinc-400">
-                        {r.mutations_used.length > 0 ? (
-                          <span className="text-amber-400">{r.mutations_used.join(", ")}</span>
-                        ) : (
-                          <span className="text-zinc-600">Direct</span>
-                        )}
+                      <td className="font-mono text-xs text-[#5a5d6b]">
+                        {r.mutations_used.length > 0 ? r.mutations_used.join(", ") : "Direct"}
                       </td>
-
-                      <td className="py-3 px-4 text-right">
+                      <td className="text-right">
                         {r.trace_ids.length > 0 && (
                           <button
-                            onClick={() => onInspectTrace(r.trace_ids[0])}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition border border-zinc-700"
+                            onClick={() => onInspectTrace?.(r.trace_ids[0])}
+                            className="btn btn-sm btn-ghost text-[11px] font-mono text-[#ee7b30]"
                           >
-                            <Layers className="w-3 h-3 text-red-400" />
-                            <span>Inspect Trace</span>
+                            Inspect trace
                           </button>
                         )}
                       </td>
@@ -287,6 +254,7 @@ export default function CampaignRunnerView({ onInspectTrace, attacks }: Campaign
           </div>
         </div>
       )}
+
     </div>
   );
 }

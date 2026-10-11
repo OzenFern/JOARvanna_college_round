@@ -2,6 +2,7 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.tsbuildinfo
 
 # C extensions
 *.so
@@ -150,7 +151,9 @@ activemq-data/
 
 # Environments
 .env
+.env.*
 .envrc
+!.env.example
 .venv
 env/
 venv/
@@ -229,7 +232,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Database & local data
-*.db
-backend/data/*.db
+# Local data files (trace logs, etc.) — kept out of version control
 backend/data/traces/*.json
+!backend/data/traces/seed-trace.json
+backend/data/evaluations/*.json

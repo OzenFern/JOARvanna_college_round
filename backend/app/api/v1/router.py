@@ -1,4 +1,4 @@
-"""Aggregation of all API v1 routers per PRD Section 12.4."""
+"""Aggregation of all API v1 routers"""
 
 from fastapi import APIRouter
 from app.api.v1.attacks import router as attacks_router
@@ -6,6 +6,7 @@ from app.api.v1.campaigns import router as campaigns_router
 from app.api.v1.evaluations import router as evaluations_router
 from app.api.v1.traces import router as traces_router
 from app.core.config import settings
+from app.tools.registry import TOOL_REGISTRY
 
 api_router = APIRouter()
 
@@ -31,7 +32,7 @@ def get_findings():
 
 @api_router.get("/policy")
 def get_current_policy():
-    """Returns current active policy configuration (read-only in MVP per PRD Section 11.1)."""
+    """Returns current active policy configuration (read-only in MVP.1)."""
     return {
         "policy_id": "pol_default_v1",
         "name": "Standard Customer Support Guardrail Policy",
@@ -47,6 +48,7 @@ def get_current_policy():
             "process_refund",
             "http_request",
         ],
+        "registered_tools": sorted(TOOL_REGISTRY.keys()),
         "canary_tokens": [
             "SSN-CANARY-9182",
             "API_KEY_CANARY_X9",
@@ -64,6 +66,16 @@ from app.evaluator.permission_audit import PermissionAuditor
 
 @api_router.get("/audit/permissions")
 def get_permission_audit():
-    """Permission audit comparing declared vs used vs reachable permissions per Section 9.4."""
+    """Permission audit comparing declared vs used vs reachable permissions."""
     auditor = PermissionAuditor(declared_tools=DEFAULT_TOOLS)
     return [item.model_dump() for item in auditor.audit()]
+
+@api_router.get("/db/status")
+def get_db_status():
+    """Returns database connectivity status."""
+    from app.core.database import db
+    return {
+        "engine": "postgresql",
+        "ready": db._ready,
+        "configured": bool(db.raw_url),
+    }

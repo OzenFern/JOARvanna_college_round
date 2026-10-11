@@ -1,21 +1,29 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  ShieldAlert, 
-  Terminal, 
-  Activity, 
-  Layers, 
-  GitCompare, 
-  Lock, 
-  Key, 
-  CheckCircle2, 
+import Link from "next/link";
+import {
+  ShieldAlert,
+  Terminal,
+  Activity,
+  Layers,
+  GitCompare,
+  Key,
+  CheckCircle2,
   AlertTriangle,
-  ChevronRight,
   RefreshCw,
-  Sliders
+  Box,
+  RotateCcw,
+  Sparkles,
+  Database,
+  LogIn,
+  LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { api, setApiKey } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSupabaseConfigured as supabaseConfigured } from "@/lib/supabase";
 import { AttackResult, EvaluationSummary, PermissionAuditItem } from "@/types";
 import DashboardView from "@/components/DashboardView";
 import CampaignRunnerView from "@/components/CampaignRunnerView";
@@ -25,42 +33,78 @@ import PermissionAuditView from "@/components/PermissionAuditView";
 
 type Tab = "dashboard" | "runner" | "traces" | "compare" | "audit";
 
-export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
-  const [backendHealth, setBackendHealth] = useState<string>("connecting");
-  const [apiKeyInput, setApiKeyInput] = useState<string>("");
-  const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
-  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+const NAV_TABS = [
+  { id: "dashboard", label: "Overview" },
+  { id: "runner",    label: "Campaigns" },
+  { id: "traces",    label: "Trace Inspector" },
+  { id: "compare",   label: "Defense Matrix" },
+  { id: "audit",     label: "Permissions" },
+] as const;
 
-  // Shared Data State
-  const [attacks, setAttacks] = useState<any[]>([]);
-  const [findings, setFindings] = useState<AttackResult[]>([]);
+export default function Home() {
+  const { user, signOut, isAuthenticated } = useAuth();
+  const [activeTab,     setActiveTab]     = useState<Tab>("dashboard");
+  const [backendHealth, setBackendHealth] = useState<"ok" | "offline" | "connecting">("connecting");
+  const [dbStatus,      setDbStatus]      = useState<{ engine: string; ready: boolean; configured: boolean } | null>(null);
+  const [apiKeyInput,   setApiKeyInput]   = useState<string>("");
+  const [showKeyModal,  setShowKeyModal]  = useState<boolean>(false);
+  const [hasApiKey,     setHasApiKey]     = useState<boolean>(false);
+  const [theme,         setTheme]         = useState<"light" | "dark">("light");
+
+  // Load and apply theme from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("agentbreak_theme") as "light" | "dark" | null;
+    const initialTheme = saved || "light";
+    setTheme(initialTheme);
+    if (initialTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    localStorage.setItem("agentbreak_theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  // Shared data state
+  const [attacks,     setAttacks]     = useState<any[]>([]);
+  const [findings,    setFindings]    = useState<AttackResult[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationSummary[]>([]);
-  const [auditItems, setAuditItems] = useState<PermissionAuditItem[]>([]);
+  const [policy,      setPolicy]      = useState<{ tool_allowlist?: string[]; registered_tools?: string[] } | null>(null);
+  const [auditItems,  setAuditItems]  = useState<PermissionAuditItem[]>([]);
   const [evalLoading, setEvalLoading] = useState<boolean>(false);
 
-  // Load initial datasets
   const loadData = async () => {
     try {
-      const [h, atks, fnds, audit, latestEval] = await Promise.allSettled([
+      const [h, atks, fnds, audit, latestEval, dbStat, policyResult] = await Promise.allSettled([
         api.getHealth(),
         api.getAttacks(),
         api.getFindings(),
         api.getPermissionAudit(),
         api.getLatestEvaluation(),
+        api.getDbStatus(),
+        api.getPolicy(),
       ]);
 
-      if (h.status === "fulfilled") setBackendHealth(h.value.status);
-      else setBackendHealth("offline");
-
-      if (atks.status === "fulfilled") setAttacks(atks.value);
-      if (fnds.status === "fulfilled") setFindings(fnds.value);
-      if (audit.status === "fulfilled") setAuditItems(audit.value);
+      setBackendHealth(h.status === "fulfilled" ? "ok" : "offline");
+      if (atks.status       === "fulfilled") setAttacks(atks.value);
+      if (fnds.status       === "fulfilled") setFindings(fnds.value);
+      if (audit.status      === "fulfilled") setAuditItems(audit.value);
       if (latestEval.status === "fulfilled" && latestEval.value.length > 0) {
         setEvaluations(latestEval.value);
       }
+      if (dbStat.status     === "fulfilled") setDbStatus(dbStat.value);
+      if (policyResult.status === "fulfilled") setPolicy(policyResult.value);
     } catch (e) {
-      console.error("Failed to load initial data", e);
+      setBackendHealth("offline");
     }
   };
 
@@ -68,9 +112,7 @@ export default function Home() {
     setEvalLoading(true);
     try {
       const res = await api.runEvaluation();
-      if ((res as any).summaries) {
-        setEvaluations((res as any).summaries);
-      }
+      if ((res as any).summaries) setEvaluations((res as any).summaries);
     } catch (err: any) {
       console.error("Evaluation failed", err);
     } finally {
@@ -78,9 +120,7 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const handleSaveKey = () => {
     setApiKey(apiKeyInput);
@@ -89,100 +129,148 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0D13] text-zinc-100 flex flex-col font-sans">
-      {/* Top Navigation Bar */}
-      <header className="border-b border-zinc-800/80 bg-[#0E111A]/70 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-red-950/80 border border-red-500/30 flex items-center justify-center text-red-400 font-bold tracking-wider text-sm shadow-inner">
-            AB
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm tracking-wide text-zinc-100">AgentBreak</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/60">
-                Red Team Platform
-              </span>
+    <div className="min-h-screen relative z-10 flex flex-col">
+
+      {/* ── Floating Pill Topbar (Matching Black Box reference) ── */}
+      <div className="sticky top-4 z-40 px-4 sm:px-8 max-w-6xl mx-auto w-full">
+        <header className="floating-topbar px-4 sm:px-6 flex items-center justify-between gap-4">
+          
+          {/* Brand */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-6 h-6 rounded-md bg-[#1c1e2b] flex items-center justify-center text-white">
+              <Box className="w-3.5 h-3.5" />
             </div>
-            <p className="text-[11px] text-zinc-400 font-mono">Autonomous AI Security &amp; Policy Verification</p>
-          </div>
-        </div>
-
-        {/* Global Controls & Status */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-xs">
-            <span className={`h-2 w-2 rounded-full ${backendHealth === "ok" ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-red-500"}`} />
-            <span className="text-zinc-400 font-mono text-[11px]">API:</span>
-            <span className="font-mono text-zinc-200 text-[11px] font-medium">{backendHealth}</span>
+            <span className="font-semibold text-[15px] tracking-tight text-[#1c1e2b]">
+              agentbreak
+            </span>
           </div>
 
-          <button
-            onClick={() => setShowKeyModal(true)}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition border ${
-              hasApiKey 
-                ? "bg-amber-950/40 text-amber-300 border-amber-600/40 hover:bg-amber-900/40" 
-                : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
-            }`}
-          >
-            <Key className="w-3.5 h-3.5" />
-            <span>{hasApiKey ? "Gemini Key (Active)" : "Set Gemini Key"}</span>
-          </button>
-        </div>
-      </header>
+          {/* Centered Pill Nav */}
+          <nav className="hidden md:flex items-center gap-1 bg-[#f6f6f4] p-1 rounded-full border border-[#e9e8e4]">
+            {NAV_TABS.map(({ id, label }) => {
+              const isActive = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as Tab)}
+                  className={`px-3.5 py-1 text-[13px] font-medium rounded-full transition-all ${
+                    isActive
+                      ? "bg-white text-[#1c1e2b] shadow-sm font-semibold"
+                      : "text-[#5a5d6b] hover:text-[#1c1e2b]"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </nav>
 
-      {/* Main Tab Navigation */}
-      <nav className="border-b border-zinc-800/60 bg-[#0B0D13] px-6 flex items-center gap-1">
-        {[
-          { id: "dashboard", label: "Dashboard", icon: Activity },
-          { id: "runner", label: "Campaign Runner", icon: Terminal },
-          { id: "traces", label: "Attack Traces", icon: Layers },
-          { id: "compare", label: "Defense Comparison", icon: GitCompare },
-          { id: "audit", label: "Permission Audit", icon: ShieldAlert },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
+          {/* Right Controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Health Pill */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono bg-[#f6f6f4] border border-[#e9e8e4] text-[#5a5d6b]">
+              <span className={`w-2 h-2 rounded-full ${
+                backendHealth === "ok" ? "bg-emerald-500" : backendHealth === "offline" ? "bg-rose-500" : "bg-amber-400 animate-pulse"
+              }`} />
+              <span className="hidden sm:inline">API</span>
+            </div>
+
+            {/* Gemini Key Pill */}
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as Tab)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition -mb-[1px] ${
-                isActive
-                  ? "border-red-500 text-zinc-100 bg-zinc-900/40"
-                  : "border-transparent text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
+              onClick={() => setShowKeyModal(true)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-medium border transition ${
+                hasApiKey
+                  ? "bg-[#fdf0e5] border-[#f8d4bb] text-[#a24d17]"
+                  : "bg-white border-[#e9e8e4] text-[#5a5d6b] hover:bg-[#f6f6f4]"
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-red-400" : "text-zinc-400"}`} />
-              <span>{tab.label}</span>
+              <Key className="w-3 h-3" />
+              <span>{hasApiKey ? "Gemini Active" : "Set Key"}</span>
             </button>
-          );
-        })}
-      </nav>
 
-      {/* Content Area */}
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
+            {/* Sun / Moon Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-white dark:bg-[#1a1e2b] border border-[#e9e8e4] dark:border-[#272d3f] text-[#5a5d6b] dark:text-[#9ea7bd] hover:bg-[#f6f6f4] dark:hover:bg-[#232838] transition"
+            >
+              {theme === "light" ? (
+                <Moon className="w-3.5 h-3.5" />
+              ) : (
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+              )}
+            </button>
+
+            {/* Refresh */}
+            <button
+              onClick={loadData}
+              title="Refresh data"
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-white dark:bg-[#1a1e2b] border border-[#e9e8e4] dark:border-[#272d3f] text-[#5a5d6b] dark:text-[#9ea7bd] hover:bg-[#f6f6f4] dark:hover:bg-[#232838] transition"
+            >
+              <RefreshCw className="w-3 h-3" />
+            </button>
+
+            {/* Auth */}
+            {supabaseConfigured && (
+              isAuthenticated && user ? (
+                <button
+                  onClick={() => signOut()}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-[#fbecea] text-[#b83a32] hover:opacity-80 transition"
+                  title={`Sign out (${user.email})`}
+                >
+                  <LogOut className="w-3 h-3" />
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="px-3 py-1 rounded-full text-[12px] font-medium bg-[#1c1e2b] text-white hover:bg-[#31344a] transition"
+                >
+                  Sign in
+                </Link>
+              )
+            )}
+          </div>
+        </header>
+
+        {/* Mobile Navigation Bar */}
+        <div className="md:hidden flex items-center justify-center gap-1 mt-2.5 overflow-x-auto pb-1">
+          {NAV_TABS.map(({ id, label }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as Tab)}
+                className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                  isActive
+                    ? "bg-[#1c1e2b] text-white"
+                    : "bg-white border border-[#e9e8e4] text-[#5a5d6b]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Main Container (max-w-5xl, editorial rhythm) ── */}
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
         {activeTab === "dashboard" && (
           <DashboardView
             evaluations={evaluations}
+            policy={policy}
             onNavigate={(tab) => setActiveTab(tab)}
             onRunQuickEvaluation={handleRunEvaluation}
             loading={evalLoading}
           />
         )}
-
         {activeTab === "runner" && (
           <CampaignRunnerView
             attacks={attacks}
-            onInspectTrace={(traceId) => {
-              setActiveTab("traces");
-            }}
+            onInspectTrace={() => setActiveTab("traces")}
           />
         )}
-
-        {activeTab === "traces" && (
-          <TraceInspectorView
-            findings={findings}
-          />
-        )}
-
+        {activeTab === "traces"  && <TraceInspectorView findings={findings} />}
         {activeTab === "compare" && (
           <DefenseComparisonView
             evaluations={evaluations}
@@ -190,48 +278,38 @@ export default function Home() {
             loading={evalLoading}
           />
         )}
-
-        {activeTab === "audit" && (
-          <PermissionAuditView
-            auditItems={auditItems}
-            loading={false}
-          />
-        )}
+        {activeTab === "audit"   && <PermissionAuditView auditItems={auditItems} loading={false} />}
       </main>
 
-      {/* API Key Modal */}
+      {/* ── Gemini Key Modal ── */}
       {showKeyModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121620] border border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center gap-2 text-zinc-100 font-semibold text-sm">
-              <Key className="w-4 h-4 text-amber-400" />
-              <span>Configure Gemini API Key (Optional)</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-xl border border-[#e9e8e4]">
+            <div className="flex items-center gap-2 mb-2">
+              <Key className="w-4 h-4 text-[#ee7b30]" />
+              <h3 className="font-semibold text-base text-[#1c1e2b]">Configure Gemini API Key</h3>
             </div>
-            <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-              Per Section 11.2 of the PRD, your key is kept <strong>in memory only</strong> and is never saved to disk or localStorage. Without a key, AgentBreak operates completely on the deterministic mock model.
+            <p className="text-xs text-[#5a5d6b] leading-relaxed mb-4">
+              Your key is kept strictly in-memory per request and never stored in files or databases. Without a key, AgentBreak automatically uses deterministic mock adapter at zero cost.
             </p>
-
-            <div className="mt-4">
-              <label className="block text-[11px] font-mono text-zinc-400 mb-1">GEMINI_API_KEY</label>
-              <input
-                type="password"
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full bg-[#0B0D13] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveKey()}
+              placeholder="AIzaSy..."
+              className="w-full bg-[#f6f6f4] border border-[#e9e8e4] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#1c1e2b] outline-none focus:border-[#ee7b30] mb-4"
+            />
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowKeyModal(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-400 hover:text-zinc-200 transition"
+                className="btn btn-sm btn-ghost"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveKey}
-                className="px-4 py-1.5 rounded-lg text-xs font-mono bg-red-600 hover:bg-red-500 text-white font-medium transition shadow-sm"
+                className="btn btn-sm btn-primary"
               >
                 Save In Memory
               </button>
@@ -239,6 +317,17 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* ── Clean Footer ── */}
+      <footer className="border-t border-[#e9e8e4] py-8 text-center text-xs text-[#8a8c97]">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span>AgentBreak · Autonomous AI Red Team &amp; Invariant Verifier</span>
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[11px]">D0 Baseline vs D1+D2+D3 Hardened</span>
+            <span>Zero Model Calls on Replay</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

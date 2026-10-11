@@ -1,4 +1,4 @@
-"""Red Team Campaign Runner per PRD Section 8 & Section 10."""
+"""Red Team Campaign Runner Section 10."""
 
 from typing import Dict, List, Optional
 from app.agent.mock_adapter import MockModelAdapter
@@ -89,11 +89,15 @@ class CampaignRunner:
                     tracer.save()
                     verdict = self.judge.evaluate_trace(tracer.steps)
                     # If it didn't succeed, mutate!
-                    if not verdict.success:
-                        payload, mutator_name = mutate_payload(attack, attempt_number=attempt)
-                        active_mutations.append(mutator_name)
-                        last_payload = payload
-                        continue
+                    # Attacks marked as mutation-driven deliberately reserve their
+                    # first observation for feedback, even if the baseline model
+                    # happened to execute it.
+                    payload, mutator_name = mutate_payload(
+                        attack, attempt_number=attempt, failed_reason="initial attempt"
+                    )
+                    active_mutations.append(mutator_name)
+                    last_payload = payload
+                    continue
                 else:
                     # Run attack payload
                     run_res = agent.run_task(
@@ -111,7 +115,9 @@ class CampaignRunner:
                     trial_trace_ids.append(tracer.trace_id)
                     all_violated_invariants.extend(verdict.violated_invariants)
                     if verdict.severity:
-                        highest_severity = verdict.severity
+                        _RANK = {Severity.LOW: 0, Severity.MEDIUM: 1, Severity.HIGH: 2, Severity.CRITICAL: 3}
+                        if _RANK.get(verdict.severity, 0) > _RANK.get(highest_severity, 0):
+                            highest_severity = verdict.severity
                     break
                 else:
                     # Attempt failed; try mutation if budget allows

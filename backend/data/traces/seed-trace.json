@@ -1,0 +1,20 @@
+{
+  "trace_id": "seed-trace",
+  "active_defense": "D1+D2+D3",
+  "model_adapter": "mock",
+  "steps": [
+    {
+      "step_number": 1,
+      "actor": "user",
+      "event_type": "user_input_received",
+      "source": "user",
+      "input": "Seed trace available for fresh deployments."
+    },
+    {
+      "step_number": 2,
+      "actor": "agent",
+      "event_type": "run_finished",
+      "input": "No campaign has been run yet."
+    }
+  ]
+}

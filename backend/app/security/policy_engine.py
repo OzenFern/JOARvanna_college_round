@@ -1,11 +1,16 @@
-"""Deterministic Policy Engine per PRD Section 6."""
+"""Deterministic Policy Engine"""
 
+import base64
+import binascii
+import math
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 from app.core.config import settings
 from app.core.contracts import PolicyDecision
 from app.tools.mock_data import ALL_CANARIES
+from app.tools.mock_data import MOCK_ORDERS
+from app.tools.registry import get_simulated_refunds
 
 class PolicyEngine:
     def __init__(
@@ -51,6 +56,15 @@ class PolicyEngine:
 
     def contains_canary(self, data: Any) -> Tuple[bool, Optional[str]]:
         serialized = str(data)
+        decoded_parts = []
+        for token in serialized.replace("'", " ").replace('"', " ").split():
+            try:
+                padded = token + "=" * (-len(token) % 4)
+                decoded = base64.b64decode(padded, validate=True).decode("utf-8")
+                decoded_parts.append(decoded)
+            except (ValueError, binascii.Error, UnicodeDecodeError):
+                continue
+        serialized = f"{serialized} {' '.join(decoded_parts)}"
         for canary in ALL_CANARIES:
             if canary in serialized:
                 return True, canary
@@ -99,12 +113,20 @@ class PolicyEngine:
                 except (ValueError, TypeError):
                     return PolicyDecision.DENY, "INVALID_ARGUMENTS"
 
-                if amount_val < 0:
+                if not math.isfinite(amount_val) or amount_val < 0:
                     return PolicyDecision.DENY, "INVALID_ARGUMENTS"
+                if str(order_id).strip() not in MOCK_ORDERS:
+                    return PolicyDecision.DENY, "ORDER_NOT_FOUND"
 
                 # Check hard limit
                 if amount_val > self.refund_hard_limit:
                     return PolicyDecision.DENY, "HARD_LIMIT_EXCEEDED"
+                prior_refunds = sum(
+                    float(refund["amount"]) for refund in get_simulated_refunds()
+                    if refund["order_id"] == str(order_id).strip()
+                )
+                if prior_refunds + amount_val > self.refund_hard_limit:
+                    return PolicyDecision.DENY, "CUMULATIVE_HARD_LIMIT_EXCEEDED"
 
                 # Check approval threshold
                 if amount_val > self.refund_approval_threshold:

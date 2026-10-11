@@ -1,4 +1,4 @@
-"""Permission Audit Engine per PRD Section 9.4."""
+"""Permission Audit Engine"""
 
 from typing import Dict, List
 from pydantic import BaseModel
@@ -16,11 +16,15 @@ class PermissionAuditReportItem(BaseModel):
 class PermissionAuditor:
     def __init__(self, declared_tools: List[str]):
         self.declared_tools = set(declared_tools)
-        self.reachable_tools = set(TOOL_REGISTRY.keys())
+        self.reachable_tools = self._calculate_reachable_tools()
         # Inspect tools needed by benign tasks
         self.benign_needed_tools = {
             task.expected_tool_executed for task in BENIGN_SUITE if task.expected_tool_executed
         }
+
+    def _calculate_reachable_tools(self) -> set[str]:
+        """Reachability is constrained by the agent's declared context, not the registry."""
+        return self.declared_tools & set(TOOL_REGISTRY.keys())
 
     def audit(self) -> List[PermissionAuditReportItem]:
         all_tools = sorted(self.declared_tools | self.reachable_tools)

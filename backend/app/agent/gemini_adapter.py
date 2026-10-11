@@ -1,11 +1,11 @@
-"""Gemini Model Adapter per PRD Section 5.4 & Section 11.2.
+"""Gemini Model Adapter Section 11.2.
 
 Features:
-- Uses google-genai Client with Interactions API (gemini-3.8-flash)
+- Uses google-genai Client with the supported Models API
 - Accepts in-memory API key (per-request or environment)
 - Translates declared sandbox tools into function definitions
 - Returns ModelResponse with ToolProposal or final_answer
-- Falls back safely to MockModelAdapter if no API key is provided or on network/API failure
+- Uses the deterministic mock adapter only when no key is provided; provider errors are surfaced
 - Zero key logging or persistence
 """
 
@@ -20,14 +20,15 @@ logger = logging.getLogger(__name__)
 
 class GeminiModelAdapter(ModelAdapter):
     """
-    Adapter interfacing real Gemini models (gemini-3.8-flash) via google-genai SDK.
+    Adapter interfacing real Gemini models via the google-genai SDK.
     Strictly keeps API keys in memory only.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-3.8-flash"):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key.strip() if api_key and api_key.strip() else None
-        self.model = model
-        self._fallback_adapter = MockModelAdapter()
+        from app.core.config import settings
+        self.model = model or settings.GEMINI_MODEL_NAME
+        self._offline_adapter = MockModelAdapter()
 
     def generate_response(
         self,
@@ -37,7 +38,7 @@ class GeminiModelAdapter(ModelAdapter):
     ) -> ModelResponse:
         # If no key provided, seamlessly fall back to deterministic mock model
         if not self.api_key:
-            return self._fallback_adapter.generate_response(
+            return self._offline_adapter.generate_response(
                 system_prompt=system_prompt,
                 messages=messages,
                 available_tools=available_tools,
@@ -70,13 +71,12 @@ class GeminiModelAdapter(ModelAdapter):
 
             formatted_prompt += "\nASSISTANT:"
 
-            interaction = client.interactions.create(
+            response = client.models.generate_content(
                 model=self.model,
-                input=formatted_prompt,
-                store=False,  # Do not store interaction remotely
+                contents=formatted_prompt,
             )
 
-            raw_text = interaction.output_text or ""
+            raw_text = response.text or ""
 
             # Check if Gemini output is a JSON tool call
             parsed_tool = self._extract_json_tool(raw_text)
@@ -97,12 +97,8 @@ class GeminiModelAdapter(ModelAdapter):
             )
 
         except Exception as e:
-            logger.warning(f"Gemini API call failed or rate-limited: {e}. Falling back to mock adapter.")
-            return self._fallback_adapter.generate_response(
-                system_prompt=system_prompt,
-                messages=messages,
-                available_tools=available_tools,
-            )
+            logger.exception("Gemini API call failed")
+            raise RuntimeError(f"Gemini API request failed: {e}") from e
 
     def _extract_json_tool(self, text: str) -> Optional[Dict[str, Any]]:
         """Extracts JSON tool proposal from model generation if present."""

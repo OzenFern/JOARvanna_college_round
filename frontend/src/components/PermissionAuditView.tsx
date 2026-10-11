@@ -1,15 +1,12 @@
 "use client";
 
 import React from "react";
-import { 
-  ShieldAlert, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Lock, 
-  Terminal, 
-  FileCode,
+import {
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
   Layers,
-  ArrowRight
 } from "lucide-react";
 import { PermissionAuditItem } from "@/types";
 
@@ -25,106 +22,84 @@ export default function PermissionAuditView({
   const overPermissioned = auditItems.filter((i) => i.over_permissioned);
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="rounded-xl border border-zinc-800 bg-[#121620] p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-zinc-100">Permission &amp; Capability Least-Privilege Audit</h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-amber-950/70 text-amber-300 border border-amber-800/50">
-                Section 9.4 Invariant
-              </span>
-            </div>
-            <p className="text-xs text-zinc-400 mt-1 max-w-2xl leading-relaxed">
-              Audits the principle of least privilege by cross-referencing <strong>Declared Permissions</strong> in agent metadata against <strong>Actually Used Tools</strong> across legitimate workflows and <strong>Reachable Attack Surface</strong>.
-            </p>
-          </div>
+    <div className="space-y-8 animate-fade-in">
+      
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="label mb-1 text-[#ee7b30]">Principle of Least Privilege</div>
+          <h1 className="h1">Capability &amp; permission audit</h1>
+          <p className="muted text-xs mt-1 max-w-xl">
+            Detect over-permissioned tools exposed to the agent sandbox that are never invoked during legitimate customer workflows.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-xs">
-            <span className="text-zinc-500">Flagged Tools:</span>
-            <span className="text-amber-400 font-bold">{overPermissioned.length} of {auditItems.length}</span>
-          </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#fbf3e3] border border-[#f5dfb8] text-xs font-mono text-[#946013]">
+          <ShieldAlert className="w-3.5 h-3.5" />
+          <span>{overPermissioned.length} of {auditItems.length} tools over-permissioned</span>
         </div>
       </div>
 
-      {/* Main Audit Table */}
-      <div className="bg-[#121620] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-zinc-800/80 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
-            <h2 className="text-sm font-semibold text-zinc-100">Tool Permission Matrix</h2>
-          </div>
-          <span className="text-xs font-mono text-zinc-500">Customer Support Agent Scope</span>
+      {/* ── Tool Permission Table ── */}
+      <div className="card overflow-hidden bg-white">
+        <div className="px-5 py-3 border-b border-[#e9e8e4] flex items-center justify-between">
+          <span className="font-semibold text-xs text-[#1c1e2b]">Declared vs Used Capabilities</span>
+          <span className="badge badge-neutral text-[10px]">Customer Support Agent</span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="table">
             <thead>
-              <tr className="border-b border-zinc-800 bg-[#0E111A] text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
-                <th className="py-3 px-4">Tool Name</th>
-                <th className="py-3 px-4 text-center">Declared in Scope</th>
-                <th className="py-3 px-4 text-center">Used by Benign Tasks</th>
-                <th className="py-3 px-4 text-center">Reachable in Runtime</th>
-                <th className="py-3 px-4 text-center">Audit Assessment</th>
-                <th className="py-3 px-4">Remediation / Scope Notes</th>
+              <tr>
+                <th>Tool Name</th>
+                <th className="text-center">Declared</th>
+                <th className="text-center">Used in Tasks</th>
+                <th className="text-center">Reachable Surface</th>
+                <th className="text-center">Assessment</th>
+                <th>Remediation Advice</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-xs font-mono">
+            <tbody>
               {auditItems.length > 0 ? (
                 auditItems.map((item) => {
                   const isFlagged = item.over_permissioned;
-
                   return (
-                    <tr 
+                    <tr
                       key={item.tool_name}
-                      className={`hover:bg-zinc-800/30 transition ${
-                        isFlagged ? "bg-amber-950/10" : ""
-                      }`}
+                      className={isFlagged ? "bg-[#fbf3e3]/30" : ""}
                     >
-                      <td className="py-3.5 px-4 font-bold text-zinc-200">
-                        {item.tool_name}
+                      <td>
+                        <span className="font-mono font-semibold text-xs text-[#1c1e2b]">
+                          {item.tool_name}
+                        </span>
                       </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-300">
+                      <td className="text-center">
+                        <span className="badge badge-neutral text-[10px]">
                           {item.declared ? "YES" : "NO"}
                         </span>
                       </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] ${
-                          item.used 
-                            ? "bg-blue-950 text-blue-300 border border-blue-800/50" 
-                            : "bg-zinc-900 text-zinc-500"
-                        }`}>
-                          {item.used ? "YES (Active)" : "NO (Unused)"}
+                      <td className="text-center">
+                        <span className={`badge ${item.used ? "badge-pass" : "badge-neutral"} text-[10px]`}>
+                          {item.used ? "Active" : "Unused"}
                         </span>
                       </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          item.reachable ? "text-amber-400" : "text-zinc-500"
-                        }`}>
+                      <td className="text-center font-mono text-xs">
+                        <span className={item.reachable ? "text-[#ee7b30] font-semibold" : "text-[#8a8c97]"}>
                           {item.reachable ? "REACHABLE" : "CONTAINED"}
                         </span>
                       </td>
-
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="text-center">
                         {isFlagged ? (
-                          <span className="flex items-center justify-center gap-1.5 text-amber-400 font-semibold">
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Over-Permissioned</span>
+                          <span className="badge badge-warn text-[10px]">
+                            Over-Permissioned
                           </span>
                         ) : (
-                          <span className="flex items-center justify-center gap-1.5 text-emerald-400 font-semibold">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Least Privilege</span>
+                          <span className="badge badge-pass text-[10px]">
+                            Least Privilege
                           </span>
                         )}
                       </td>
-
-                      <td className="py-3.5 px-4 text-zinc-300 font-sans text-xs">
+                      <td className="text-xs text-[#5a5d6b]">
                         {item.scope_notes}
                       </td>
                     </tr>
@@ -132,8 +107,8 @@ export default function PermissionAuditView({
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-zinc-500">
-                    Loading capability audit matrix...
+                  <td colSpan={6} className="py-8 text-center text-xs font-mono text-[#8a8c97]">
+                    {loading ? "Loading audit matrix..." : "No capability audit data available."}
                   </td>
                 </tr>
               )}
@@ -142,28 +117,33 @@ export default function PermissionAuditView({
         </div>
       </div>
 
-      {/* Security Architecture Principle */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="bg-[#121620] border border-zinc-800/80 rounded-xl p-5">
-          <h3 className="text-xs font-mono font-semibold text-zinc-200 flex items-center gap-2 uppercase">
-            <Lock className="w-4 h-4 text-amber-400" />
-            <span>Why Unused Tools Are Dangerous</span>
-          </h3>
-          <p className="text-xs text-zinc-400 mt-2.5 leading-relaxed">
-            In our threat model, a support agent equipped with <code>http_request</code> or <code>execute_shell</code> never calls them during legitimate user interactions. However, an attacker exploiting indirect prompt injection in a user ticket can trick the agent into using these undeclared capabilities to exfiltrate private tokens.
+      {/* ── Two Clean Explanatory Cards ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="card card-pad bg-white">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-4 h-4 text-[#ee7b30]" />
+            <h3 className="font-semibold text-xs uppercase tracking-wider text-[#1c1e2b]">
+              Why excess tools are dangerous
+            </h3>
+          </div>
+          <p className="text-xs text-[#5a5d6b] leading-relaxed">
+            In our threat model, a support agent equipped with <code className="text-[#a24d17] bg-[#fdf0e5] px-1 py-0.5 rounded">http_request</code> or <code className="text-[#a24d17] bg-[#fdf0e5] px-1 py-0.5 rounded">execute_shell</code> never calls them in normal tasks. However, an indirect prompt injection in a customer ticket can coerce the LLM into invoking them to exfiltrate private credentials.
           </p>
         </div>
 
-        <div className="bg-[#121620] border border-zinc-800/80 rounded-xl p-5">
-          <h3 className="text-xs font-mono font-semibold text-zinc-200 flex items-center gap-2 uppercase">
-            <Layers className="w-4 h-4 text-blue-400" />
-            <span>Deterministic Mitigation</span>
-          </h3>
-          <p className="text-xs text-zinc-400 mt-2.5 leading-relaxed">
-            Applying the principle of least privilege: remove <code>execute_shell</code> and <code>http_request</code> from the declared tool registry entirely. An agent cannot be coerced into calling tools that are not exposed to its dispatch environment.
+        <div className="card card-pad bg-white">
+          <div className="flex items-center gap-2 mb-2">
+            <Layers className="w-4 h-4 text-[#3a3f9e]" />
+            <h3 className="font-semibold text-xs uppercase tracking-wider text-[#1c1e2b]">
+              Deterministic Mitigation
+            </h3>
+          </div>
+          <p className="text-xs text-[#5a5d6b] leading-relaxed">
+            Strip unused tools from the registered dispatcher schema entirely. An LLM agent cannot be tricked into executing capabilities that do not exist in its sandbox boundary.
           </p>
         </div>
       </div>
+
     </div>
   );
 }

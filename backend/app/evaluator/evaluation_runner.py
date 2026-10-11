@@ -1,4 +1,4 @@
-"""Evaluation Runner producing the full defense matrix per PRD Section 7.5 & 10."""
+"""Evaluation Runner producing the full defense matrix"""
 
 import json
 import uuid
@@ -90,8 +90,14 @@ class EvaluationRunner:
             )
             summaries.append(summary)
 
-        # Store in cache and persist to disk
+        # Store in cache, database, and persist to disk
         _EVALUATION_CACHE[eval_id] = summaries
+
+        try:
+            from app.core.database import db
+            db.save_evaluation_matrix(eval_id, [s.model_dump() for s in summaries])
+        except Exception:
+            pass
 
         eval_dir = settings.DATA_DIR / "evaluations"
         eval_dir.mkdir(parents=True, exist_ok=True)
@@ -111,6 +117,15 @@ class EvaluationRunner:
         if _EVALUATION_CACHE:
             latest_id = list(_EVALUATION_CACHE.keys())[-1]
             return _EVALUATION_CACHE[latest_id]
+
+        try:
+            from app.core.database import db
+            db_evals = db.get_latest_evaluations()
+            if db_evals:
+                summaries = [EvaluationSummary(**row) for row in db_evals]
+                return summaries
+        except Exception:
+            pass
 
         eval_dir = settings.DATA_DIR / "evaluations"
         if eval_dir.exists():

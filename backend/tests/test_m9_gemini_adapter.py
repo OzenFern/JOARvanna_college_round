@@ -1,6 +1,7 @@
 """Unit & Integration tests for GeminiModelAdapter and Key Handling per Milestone M9."""
 
 import pytest
+from unittest.mock import patch
 from app.agent.gemini_adapter import GeminiModelAdapter
 from app.agent.target_agent import TargetAgent
 from app.evaluator.tracer import TraceRecorder
@@ -19,19 +20,34 @@ def test_gemini_adapter_fallback_when_no_key():
     assert res.tool_proposal.tool_name == "lookup_order"
     assert res.tool_proposal.arguments == {"order_id": "ORD-1001"}
 
-def test_gemini_adapter_fallback_on_invalid_key():
-    """Verify GeminiModelAdapter gracefully catches errors and falls back rather than crashing."""
+def test_gemini_adapter_surfaces_provider_errors():
+    """Provider failures must be visible to callers instead of becoming mock results."""
     adapter = GeminiModelAdapter(api_key="INVALID_TEST_KEY_FOR_MOCK_FALLBACK")
     messages = [{"role": "user", "content": "Please read document refund_policy.md"}]
-    res = adapter.generate_response(
-        system_prompt="Support assistant",
-        messages=messages,
-        available_tools=["read_document"],
-    )
-    # Even if google-genai fails with 400/403 or network issue, fallback returns safe response
-    assert res.tool_proposal is not None
-    assert res.tool_proposal.tool_name == "read_document"
-    assert res.tool_proposal.arguments == {"doc_name": "refund_policy.md"}
+    with pytest.raises(RuntimeError, match="Gemini API request failed"):
+        adapter.generate_response(
+            system_prompt="Support assistant",
+            messages=messages,
+            available_tools=["read_document"],
+        )
+
+def test_gemini_adapter_uses_supported_models_api():
+    class Response:
+        text = '{"tool_name":"lookup_order","arguments":{"order_id":"ORD-1001"}}'
+
+    with patch("google.genai.Client") as client_factory:
+        client = client_factory.return_value
+        client.models.generate_content.return_value = Response()
+        adapter = GeminiModelAdapter(api_key="test-key")
+        result = adapter.generate_response(
+            system_prompt="Support assistant",
+            messages=[{"role": "user", "content": "look up ORD-1001"}],
+            available_tools=["lookup_order"],
+        )
+
+    client.models.generate_content.assert_called_once()
+    assert result.tool_proposal is not None
+    assert result.tool_proposal.tool_name == "lookup_order"
 
 def test_gemini_adapter_end_to_end_agent_run():
     """Verify TargetAgent runs safely end-to-end with GeminiModelAdapter in sandbox."""
@@ -49,18 +65,19 @@ def test_gemini_adapter_end_to_end_agent_run():
     assert len(tracer.steps) >= 3
 
 def test_api_key_not_leaked_in_trace():
-    """Verify PRD Rule 14.1.4: API key is never logged, stored, or echoed into trace steps."""
+    """Verify API key is never logged, stored, or echoed into trace steps."""
     secret_key = "AIzaSySecretFakeKey12345"
     adapter = GeminiModelAdapter(api_key=secret_key)
     agent = TargetAgent(model_adapter=adapter)
     tracer = TraceRecorder(active_defense="D0", model_adapter="gemini")
     gateway = ToolGateway(active_defense="D0")
 
-    agent.run_task(
-        task_prompt="Look up order ORD-1001",
-        tracer=tracer,
-        gateway=gateway,
-    )
+    with pytest.raises(RuntimeError):
+        agent.run_task(
+            task_prompt="Look up order ORD-1001",
+            tracer=tracer,
+            gateway=gateway,
+        )
     saved_path = tracer.save()
     trace_json = saved_path.read_text(encoding="utf-8")
     assert secret_key not in trace_json
