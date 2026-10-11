@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   ShieldAlert,
   Terminal,
@@ -20,7 +21,6 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import Link from "next/link";
 import { api, setApiKey } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSupabaseConfigured as supabaseConfigured } from "@/lib/supabase";
