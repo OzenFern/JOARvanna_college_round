@@ -15,6 +15,7 @@ import {
 import { EvaluationSummary } from "@/types";
 
 interface DashboardViewProps {
+  attackCount: number;
   evaluations: EvaluationSummary[];
   policy: { tool_allowlist?: string[]; registered_tools?: string[] } | null;
   onNavigate: (tab: "runner" | "traces" | "compare" | "audit") => void;
@@ -23,6 +24,7 @@ interface DashboardViewProps {
 }
 
 export default function DashboardView({
+  attackCount,
   evaluations,
   policy,
   onNavigate,
@@ -87,7 +89,7 @@ export default function DashboardView({
             {baselineASR}%
           </div>
           <p className="text-xs text-[#5a5d6b] mt-2 leading-relaxed">
-            All 10 multi-turn attacks bypass pure prompt guardrails.
+            All {attackCount} cataloged attack vectors are evaluated against pure prompt guardrails.
           </p>
         </div>
 
@@ -109,7 +111,7 @@ export default function DashboardView({
         <div className="card card-pad bg-white">
           <div className="flex items-center justify-between mb-2">
             <span className="label text-[#3a3f9e]">Benign Utility</span>
-            <span className="badge badge-neutral">10 Tasks</span>
+            <span className="badge badge-neutral">10 Benign Tasks</span>
           </div>
           <div className="text-3xl font-semibold tracking-tight text-[#1c1e2b] font-mono">
             {benignPass}%

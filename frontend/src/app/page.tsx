@@ -257,6 +257,7 @@ export default function Home() {
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
         {activeTab === "dashboard" && (
           <DashboardView
+            attackCount={attacks.length}
             evaluations={evaluations}
             policy={policy}
             onNavigate={(tab) => setActiveTab(tab)}

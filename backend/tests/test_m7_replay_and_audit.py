@@ -39,6 +39,17 @@ def test_m7_exact_replay_zero_model_calls():
     assert api_data["model_calls_made"] == 0
     assert api_data["verdict"]["success"] is True
 
+    # The API must preserve an explicitly requested defense instead of
+    # silently falling back to the original trace's D0 defense.
+    defended_api_res = client.post(
+        f"/api/v1/traces/{orig_trace_id}/replay",
+        json={"target_defense": "D1+D2+D3"},
+    )
+    assert defended_api_res.status_code == 200
+    defended_api_data = defended_api_res.json()
+    assert defended_api_data["target_defense"] == "D1+D2+D3"
+    assert defended_api_data["verdict"]["success"] is False
+
 def test_m7_replay_against_defense_blocks_exploit():
     """Replaying the same trace against D1+D2+D3 blocks the exploit with zero model calls."""
     reset_mock_state()

@@ -7,7 +7,7 @@
 
 ##  Key Highlights & Architectural Core
 
-1. **Autonomous Red-Team Catalog (10 Vectors)**: Multi-surface exploits covering prompt injection, indirect knowledge-base injection, memory poisoning, path traversal, argument abuse, and unauthorized scope escalation.
+1. **Autonomous Red-Team Catalog (12 Vectors)**: Multi-surface exploits covering prompt injection, indirect knowledge-base injection, memory poisoning, path traversal, argument abuse, and unauthorized scope escalation.
 2. **Deterministic Pre-Execution Tool Gateway**: Policy gates (`D1`, `D2`, `D3`, `D1+D2+D3`) intercept tool calls in application code *before* mock side-effects or network packets trigger.
 3. **Planted Canaries & Causal Tracing**: Tracks `SSN-CANARY-9182` and `API_KEY_CANARY_X9` egress with full taint propagation.
 4. **Exact Replay with Zero Model Calls**: Re-evaluate previously captured attack traces against hardened defense layers in under 15ms without spending API tokens.
@@ -26,7 +26,7 @@ JOARvanna_college_round/
 │   │   ├── api/v1/                # REST endpoints (/campaigns, /evaluations, /traces, /audit)
 │   │   ├── core/                  # Configuration, database.py (PostgreSQL DDL & queries)
 │   │   ├── evaluator/             # TraceRecorder, Judge, BenignSuiteRunner, ExactReplayEngine
-│   │   ├── redteam/               # Attack catalog (ATK-01 to ATK-10), Mutators, BudgetController
+│   │   ├── redteam/               # Attack catalog (ATK-01 to ATK-12), Mutators, BudgetController
 │   │   ├── security/              # Deterministic PolicyEngine (D1, D2, D3) & Gateway
 │   │   └── tools/                 # Sandboxed mock tools & planted canary database
 │   ├── data/                      # documents/, traces/, evaluations/, blocklist.txt
