@@ -362,3 +362,100 @@ body::before {
   background: var(--saffron-soft);
   color: var(--saffron-ink);
 }
+
+/* Component markup still contains a few light-theme utility colors. Keep
+   those surfaces and text readable when the root .dark class is active. */
+html.dark [class~="bg-white"] {
+  background-color: var(--bg-panel) !important;
+}
+
+html.dark [class~="bg-[#fbfbfa]"],
+html.dark [class~="bg-[#f6f6f4]"] {
+  background-color: var(--bg-raised) !important;
+}
+
+html.dark [class~="bg-[#efefec]"] {
+  background-color: var(--bg-hover) !important;
+}
+
+html.dark [class~="text-[#1c1e2b]"] {
+  color: var(--ink) !important;
+}
+
+html.dark [class~="text-[#5a5d6b]"] {
+  color: var(--ink-2) !important;
+}
+
+html.dark [class~="text-[#8a8c97]"] {
+  color: var(--ink-3) !important;
+}
+
+html.dark [class~="border-[#e9e8e4]"],
+html.dark [class~="border-[#d9d8d3]"],
+html.dark [class~="border-[#f0f0ed]"] {
+  border-color: var(--border) !important;
+}
+
+html.dark [class~="border-t-[#e9e8e4]"] {
+  border-top-color: var(--border) !important;
+}
+
+html.dark [class~="bg-[#e9f3ed]"] {
+  background-color: var(--leaf-soft) !important;
+}
+
+html.dark [class~="bg-[#e9f3ed]/40"] {
+  background-color: rgba(66, 157, 117, 0.12) !important;
+}
+
+html.dark [class~="bg-[#fbecea]"] {
+  background-color: var(--clay-soft) !important;
+}
+
+html.dark [class~="bg-[#fbecea]/30"] {
+  background-color: rgba(224, 83, 75, 0.1) !important;
+}
+
+html.dark [class~="bg-[#fbf3e3]"] {
+  background-color: var(--amber-soft) !important;
+}
+
+html.dark [class~="bg-[#fbf3e3]/30"] {
+  background-color: rgba(212, 149, 44, 0.1) !important;
+}
+
+html.dark [class~="bg-[#fdf0e5]"] {
+  background-color: var(--saffron-soft) !important;
+}
+
+html.dark [class~="text-[#b83a32]"] {
+  color: var(--clay) !important;
+}
+
+html.dark [class~="text-[#2e6a4f]"] {
+  color: var(--leaf) !important;
+}
+
+html.dark [class~="text-[#946013]"] {
+  color: var(--amber) !important;
+}
+
+html.dark [class~="text-[#a24d17]"] {
+  color: var(--saffron-ink) !important;
+}
+
+html.dark [class~="text-[#3a3f9e]"] {
+  color: var(--indigo) !important;
+}
+
+html.dark [class~="text-[#ee7b30]"] {
+  color: var(--saffron) !important;
+}
+
+html.dark [class~="border-[#1c1e2b]"] {
+  border-color: var(--ink) !important;
+}
+
+html.dark [class~="bg-[#1c1e2b]"] {
+  background-color: #2b3448 !important;
+}
