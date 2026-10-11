@@ -16,3 +16,16 @@ def test_api_v1_health():
     data = response.json()
     assert data["status"] == "ok"
     assert data["storage"]["blocklist_exists"] is True
+
+def test_frontend_origin_is_allowed_for_api_requests():
+    response = client.options(
+        "/api/v1/health",
+        headers={
+            "Origin": "https://joarvanna-college-round.vercel.app",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "https://joarvanna-college-round.vercel.app"
+    )
